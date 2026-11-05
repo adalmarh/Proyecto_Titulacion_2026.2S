@@ -1,0 +1,81 @@
+/* ==========================================
+   NAVBAR: USUARIO, ROL Y BOTÓN DE SALIR
+========================================== */
+
+.navbar .menu-toggle svg {
+  width: 26px;
+  height: 26px;
+  display: block;
+}
+
+.navbar .navbar-nombre {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.navbar .navbar-nombre:hover,
+.navbar .navbar-nombre:focus-visible {
+  background: #edf2f7;
+}
+
+.navbar .navbar-nombre svg {
+  width: 18px;
+  height: 18px;
+  color: #4a5568;
+}
+
+.navbar .navbar-rol {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #e2e8f0;
+  color: #2d3748;
+}
+
+.navbar .navbar-rol.rol-administrador {
+  background: #e9d8fd;
+  color: #553c9a;
+}
+
+.navbar .navbar-rol.rol-asociacion {
+  background: #bee3f8;
+  color: #2c5282;
+}
+
+.navbar .navbar-rol.rol-productor {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.navbar .navbar-rol.rol-certificador {
+  background: #feebc8;
+  color: #7b341e;
+}
+
+.navbar .navbar-salir {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.navbar .navbar-salir svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* En celulares pequeños: solo el ícono de salir */
+@media (max-width: 480px) {
+  .navbar .navbar-salir span {
+    display: none;
+  }
+
+  .navbar .navbar-rol {
+    display: none;
+  }
+}

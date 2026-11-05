@@ -1,0 +1,395 @@
+.pagina-trazabilidad {
+  width: 100%;
+}
+
+
+/* ==========================================
+   ENCABEZADO
+========================================== */
+
+.trazabilidad-header {
+  margin-bottom: 25px;
+}
+
+.trazabilidad-header h1 {
+  margin: 0;
+  font-size: 32px;
+  color: #111827;
+}
+
+.trazabilidad-header p {
+  margin-top: 6px;
+  color: #6b7280;
+}
+
+
+/* ==========================================
+   MENSAJES
+========================================== */
+
+.trazabilidad-mensaje-exito,
+.trazabilidad-mensaje-error {
+  padding: 14px 18px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.trazabilidad-mensaje-exito {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.trazabilidad-mensaje-error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+
+/* ==========================================
+   SELECTOR
+========================================== */
+
+.trazabilidad-selector {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 20px;
+}
+
+.trazabilidad-selector > div:first-child {
+  flex: 1;
+  max-width: 600px;
+}
+
+.trazabilidad-selector label {
+  display: block;
+  margin-bottom: 7px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.trazabilidad-selector select {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  background: white;
+  font-size: 14px;
+}
+
+.trazabilidad-contador {
+  min-width: 130px;
+  text-align: center;
+  padding: 10px 15px;
+  background: #ecfdf5;
+  border-radius: 10px;
+}
+
+.trazabilidad-contador strong {
+  display: block;
+  font-size: 24px;
+  color: #166534;
+}
+
+.trazabilidad-contador span {
+  font-size: 12px;
+  color: #4b5563;
+}
+
+
+/* ==========================================
+   GRID
+========================================== */
+
+.trazabilidad-grid {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 22px;
+}
+
+
+/* ==========================================
+   TARJETAS
+========================================== */
+
+.trazabilidad-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.trazabilidad-card-header {
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.trazabilidad-card-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #111827;
+}
+
+.trazabilidad-card-header p {
+  margin: 6px 0 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+
+/* ==========================================
+   FORMULARIO
+========================================== */
+
+.trazabilidad-form {
+  padding: 20px;
+}
+
+.campo {
+  margin-bottom: 17px;
+}
+
+.campo label {
+  display: block;
+  margin-bottom: 6px;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.campo input,
+.campo select,
+.campo textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 11px;
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.campo input:focus,
+.campo select:focus,
+.campo textarea:focus {
+  border-color: #2563eb;
+}
+
+.campo textarea {
+  resize: vertical;
+}
+
+.btn-registrar-evento {
+  width: 100%;
+  border: none;
+  background: #2563eb;
+  color: white;
+  padding: 12px;
+  border-radius: 7px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-registrar-evento:hover {
+  background: #1d4ed8;
+}
+
+.btn-registrar-evento:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+
+/* ==========================================
+   TIMELINE
+========================================== */
+
+.timeline {
+  padding: 25px;
+}
+
+.timeline-item {
+  position: relative;
+  display: flex;
+  gap: 15px;
+  padding-bottom: 25px;
+}
+
+.timeline-item:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 16px;
+  bottom: 0;
+  width: 2px;
+  background: #d1fae5;
+}
+
+.timeline-punto {
+  position: relative;
+  z-index: 1;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  color: #16a34a;
+  background: #dcfce7;
+  font-size: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline-contenido {
+  flex: 1;
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  padding: 15px;
+}
+
+.timeline-cabecera {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.timeline-tipo {
+  display: inline-block;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 4px 8px;
+  border-radius: 15px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.timeline-cabecera h3 {
+  margin: 8px 0;
+  color: #111827;
+  font-size: 15px;
+}
+
+.btn-eliminar-evento {
+  border: none;
+  background: #fee2e2;
+  color: #dc2626;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.timeline-datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.timeline-evidencia {
+  margin-top: 12px;
+  padding: 9px;
+  background: #f9fafb;
+  border-radius: 6px;
+  color: #4b5563;
+  font-size: 12px;
+  word-break: break-word;
+}
+
+
+/* ==========================================
+   ESTADOS
+========================================== */
+
+.trazabilidad-vacio,
+.trazabilidad-cargando {
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 30px;
+  color: #6b7280;
+}
+
+.trazabilidad-vacio div {
+  font-size: 45px;
+  margin-bottom: 10px;
+}
+
+.trazabilidad-vacio h3 {
+  color: #111827;
+  margin: 0 0 7px;
+}
+
+.trazabilidad-vacio p {
+  margin: 0;
+}
+
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width: 1000px) {
+
+  .trazabilidad-grid {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+
+@media (max-width: 650px) {
+
+  .trazabilidad-selector {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .trazabilidad-selector > div:first-child {
+    max-width: none;
+  }
+
+}
+/* ==========================================
+   AISLAR LA LÍNEA DE TIEMPO DE ESTILOS
+   ANTIGUOS DEFINIDOS EN index.css
+========================================== */
+
+.pagina-trazabilidad .timeline {
+  margin-top: 0;
+  padding: 25px;
+}
+
+.pagina-trazabilidad .timeline::before {
+  content: none;
+}
+
+.pagina-trazabilidad .timeline-item {
+  margin-bottom: 0;
+}
+
+@media (max-width: 650px) {
+
+  .pagina-trazabilidad .timeline {
+    padding: 18px;
+  }
+
+}
+
+/* ==========================================
+   SOLO HISTORIAL (roles que solo consultan)
+========================================== */
+
+.trazabilidad-grid.solo-historial {
+  grid-template-columns: 1fr;
+}

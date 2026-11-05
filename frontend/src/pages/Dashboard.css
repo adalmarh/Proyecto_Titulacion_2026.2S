@@ -1,0 +1,723 @@
+.dashboard {
+  width: 100%;
+}
+
+
+/* ==========================================
+   ENCABEZADO
+========================================== */
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 32px;
+  color: #111827;
+}
+
+.dashboard-header p {
+  margin: 6px 0 0;
+  color: #6b7280;
+}
+
+.btn-actualizar {
+  border: none;
+  background: #2563eb;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-actualizar:hover {
+  background: #1d4ed8;
+}
+
+
+/* ==========================================
+   ERROR
+========================================== */
+
+.dashboard-error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  padding: 14px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+
+/* ==========================================
+   ESTADÍSTICAS PRINCIPALES
+========================================== */
+
+.dashboard-stats {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap: 18px;
+
+  margin-bottom: 22px;
+}
+
+.stat-card {
+  background: white;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 12px;
+
+  padding: 20px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 15px;
+
+  box-shadow:
+    0 2px 8px
+    rgba(0, 0, 0, 0.04);
+}
+
+.stat-icon {
+  width: 50px;
+  height: 50px;
+
+  border-radius: 10px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  background: #ecfdf5;
+
+  font-size: 25px;
+}
+
+.stat-card span {
+  display: block;
+
+  color: #6b7280;
+
+  font-size: 13px;
+
+  margin-bottom: 4px;
+}
+
+.stat-card strong {
+  display: block;
+
+  color: #111827;
+
+  font-size: 27px;
+}
+
+
+/* ==========================================
+   TARJETAS
+========================================== */
+
+.dashboard-card {
+  background: white;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 12px;
+
+  overflow: hidden;
+
+  margin-bottom: 22px;
+
+  box-shadow:
+    0 2px 8px
+    rgba(0, 0, 0, 0.04);
+}
+
+.dashboard-card-header {
+  padding: 20px;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+.dashboard-card-header h2 {
+  margin: 0;
+
+  font-size: 19px;
+
+  color: #111827;
+}
+
+.dashboard-card-header p {
+  margin: 5px 0 0;
+
+  font-size: 13px;
+
+  color: #6b7280;
+}
+
+
+/* ==========================================
+   GRID
+========================================== */
+
+.dashboard-grid {
+  display: grid;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap: 22px;
+}
+
+
+/* ==========================================
+   ACTIVIDAD GENERAL
+========================================== */
+
+.actividad-general {
+  padding: 25px;
+}
+
+.actividad-porcentaje {
+  display: flex;
+
+  align-items: baseline;
+
+  gap: 10px;
+
+  margin-bottom: 15px;
+}
+
+.actividad-porcentaje strong {
+  font-size: 34px;
+
+  color: #166534;
+}
+
+.actividad-porcentaje span {
+  color: #6b7280;
+
+  font-size: 14px;
+}
+
+.barra-general {
+  width: 100%;
+
+  height: 18px;
+
+  background: #e5e7eb;
+
+  border-radius: 20px;
+
+  overflow: hidden;
+}
+
+.barra-general-progreso {
+  height: 100%;
+
+  background: #22c55e;
+
+  border-radius: 20px;
+
+  transition:
+    width 0.5s ease;
+}
+
+.actividad-detalle {
+  display: flex;
+
+  justify-content: space-between;
+
+  margin-top: 8px;
+
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+
+/* ==========================================
+   BARRAS ESTADÍSTICAS
+========================================== */
+
+.estadisticas-barras {
+  padding: 20px;
+}
+
+.barra-item {
+  margin-bottom: 18px;
+}
+
+.barra-item:last-child {
+  margin-bottom: 0;
+}
+
+.barra-label {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  margin-bottom: 7px;
+
+  font-size: 13px;
+}
+
+.barra-label span {
+  color: #4b5563;
+}
+
+.barra-label strong {
+  color: #111827;
+}
+
+.barra-fondo {
+  width: 100%;
+
+  height: 10px;
+
+  background: #e5e7eb;
+
+  border-radius: 20px;
+
+  overflow: hidden;
+}
+
+.barra-progreso {
+  height: 100%;
+
+  background: #2563eb;
+
+  border-radius: 20px;
+
+  min-width: 0;
+
+  transition:
+    width 0.5s ease;
+}
+
+
+/* ==========================================
+   CERTIFICACIONES
+========================================== */
+
+.certificacion-resumen {
+  padding: 20px;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, 1fr);
+
+  gap: 12px;
+}
+
+.certificacion-item {
+  text-align: center;
+
+  padding: 20px 10px;
+
+  border-radius: 9px;
+}
+
+.certificacion-item span {
+  display: block;
+
+  font-size: 12px;
+
+  margin-bottom: 6px;
+}
+
+.certificacion-item strong {
+  font-size: 27px;
+}
+
+.certificacion-item.aprobada {
+  background: #dcfce7;
+
+  color: #166534;
+}
+
+.certificacion-item.pendiente {
+  background: #fef3c7;
+
+  color: #92400e;
+}
+
+.certificacion-item.rechazada {
+  background: #fee2e2;
+
+  color: #991b1b;
+}
+
+.certificacion-item.vencida {
+  background: #e5e7eb;
+
+  color: #374151;
+}
+
+
+/* ==========================================
+   ESTADÍSTICAS DE EVENTOS
+========================================== */
+
+.eventos-estadisticas {
+  padding: 20px;
+}
+
+.evento-estadistica {
+  margin-bottom: 18px;
+}
+
+.evento-estadistica:last-child {
+  margin-bottom: 0;
+}
+
+.evento-estadistica-header {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  margin-bottom: 7px;
+
+  font-size: 13px;
+}
+
+.evento-estadistica-header span {
+  color: #374151;
+}
+
+.evento-estadistica-header strong {
+  color: #111827;
+}
+
+.barra-evento {
+  height: 100%;
+
+  background: #16a34a;
+
+  border-radius: 20px;
+
+  transition:
+    width 0.5s ease;
+}
+
+
+/* ==========================================
+   PRODUCTOS
+========================================== */
+
+.productos-estadisticas {
+  padding: 20px;
+}
+
+.producto-estadistica {
+  margin-bottom: 18px;
+}
+
+.producto-estadistica:last-child {
+  margin-bottom: 0;
+}
+
+.producto-header {
+  display: flex;
+
+  justify-content: space-between;
+
+  margin-bottom: 7px;
+
+  font-size: 13px;
+}
+
+.producto-header span {
+  color: #374151;
+}
+
+.producto-header strong {
+  color: #111827;
+}
+
+.barra-producto {
+  height: 100%;
+
+  background: #f59e0b;
+
+  border-radius: 20px;
+
+  transition:
+    width 0.5s ease;
+}
+
+
+/* ==========================================
+   TABLA
+========================================== */
+
+.tabla-dashboard {
+  overflow-x: auto;
+}
+
+.tabla-dashboard table {
+  width: 100%;
+
+  border-collapse: collapse;
+}
+
+.tabla-dashboard th {
+  text-align: left;
+
+  padding: 13px 20px;
+
+  background: #f9fafb;
+
+  color: #4b5563;
+
+  font-size: 12px;
+
+  text-transform: uppercase;
+}
+
+.tabla-dashboard td {
+  padding: 14px 20px;
+
+  border-top:
+    1px solid #f3f4f6;
+
+  color: #374151;
+
+  font-size: 13px;
+}
+
+.tabla-dashboard td strong {
+  color: #111827;
+}
+
+
+/* ==========================================
+   ESTADOS DE LOTES
+========================================== */
+
+.estado-badge {
+  display: inline-block;
+
+  padding: 5px 9px;
+
+  border-radius: 15px;
+
+  font-size: 11px;
+
+  font-weight: 600;
+}
+
+.estado-activo {
+  background: #dcfce7;
+
+  color: #166534;
+}
+
+.estado-en_produccion {
+  background: #dbeafe;
+
+  color: #1d4ed8;
+}
+
+.estado-cosechado {
+  background: #fef3c7;
+
+  color: #92400e;
+}
+
+.estado-almacenado {
+  background: #ede9fe;
+
+  color: #6d28d9;
+}
+
+.estado-transportado {
+  background: #e0f2fe;
+
+  color: #0369a1;
+}
+
+.estado-distribuido {
+  background: #fce7f3;
+
+  color: #9d174d;
+}
+
+.estado-finalizado {
+  background: #d1fae5;
+
+  color: #065f46;
+}
+
+
+/* ==========================================
+   ACTIVIDAD RECIENTE
+========================================== */
+
+.actividad-lista {
+  padding: 10px 20px 20px;
+}
+
+.actividad-item {
+  display: flex;
+
+  gap: 14px;
+
+  padding: 15px 0;
+
+  border-bottom:
+    1px solid #f3f4f6;
+}
+
+.actividad-item:last-child {
+  border-bottom: none;
+}
+
+.actividad-icono {
+  width: 40px;
+
+  height: 40px;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+
+  background: #ecfdf5;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  font-size: 18px;
+}
+
+.actividad-contenido {
+  flex: 1;
+}
+
+.actividad-contenido strong {
+  display: block;
+
+  color: #111827;
+
+  font-size: 14px;
+}
+
+.actividad-contenido p {
+  margin: 4px 0;
+
+  color: #4b5563;
+
+  font-size: 13px;
+}
+
+.actividad-contenido small {
+  color: #9ca3af;
+
+  font-size: 11px;
+}
+
+
+/* ==========================================
+   VACÍO
+========================================== */
+
+.dashboard-vacio {
+  padding: 35px;
+
+  text-align: center;
+
+  color: #9ca3af;
+}
+
+
+/* ==========================================
+   CARGANDO
+========================================== */
+
+.dashboard-cargando {
+  min-height: 400px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  color: #6b7280;
+}
+
+.dashboard-spinner {
+  font-size: 35px;
+
+  margin-bottom: 10px;
+}
+
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width: 1100px) {
+
+  .dashboard-stats {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+}
+
+
+@media (max-width: 800px) {
+
+  .dashboard-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+}
+
+
+@media (max-width: 600px) {
+
+  .dashboard-header {
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    gap: 15px;
+  }
+
+  .dashboard-stats {
+    grid-template-columns:
+      1fr;
+  }
+
+  .certificacion-resumen {
+    grid-template-columns:
+      1fr;
+  }
+
+}

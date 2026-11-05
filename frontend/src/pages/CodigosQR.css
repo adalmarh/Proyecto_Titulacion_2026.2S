@@ -1,0 +1,581 @@
+/* ==========================================
+   PÁGINA CÓDIGOS QR
+========================================== */
+
+.pagina-qr {
+  width: 100%;
+}
+
+
+/* ==========================================
+   ENCABEZADO
+========================================== */
+
+.qr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.qr-header h1 {
+  margin: 0;
+  font-size: 32px;
+  color: #111827;
+}
+
+.qr-header p {
+  margin-top: 6px;
+  color: #6b7280;
+  font-size: 15px;
+}
+
+
+/* ==========================================
+   MENSAJES
+========================================== */
+
+.qr-mensaje-exito,
+.qr-mensaje-error {
+  padding: 14px 18px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.qr-mensaje-exito {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.qr-mensaje-error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+
+/* ==========================================
+   ESTADÍSTICAS
+========================================== */
+
+.qr-estadisticas {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 25px;
+}
+
+.qr-estadistica {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+}
+
+.qr-estadistica-icono {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ecfdf5;
+  font-size: 23px;
+}
+
+.qr-estadistica strong {
+  display: block;
+  font-size: 25px;
+  color: #111827;
+}
+
+.qr-estadistica span {
+  display: block;
+  margin-top: 3px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+
+/* ==========================================
+   CONTENEDOR PRINCIPAL
+========================================== */
+
+.qr-contenedor {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.qr-contenedor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 22px 25px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.qr-contenedor-header h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 20px;
+}
+
+.qr-contenedor-header p {
+  margin: 5px 0 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.qr-contador {
+  background: #eef2ff;
+  color: #3730a3;
+  padding: 7px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+
+/* ==========================================
+   TABLA
+========================================== */
+
+.qr-tabla-contenedor {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.qr-tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.qr-tabla th {
+  background: #f9fafb;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  padding: 15px 18px;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.qr-tabla td {
+  padding: 17px 18px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #374151;
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.qr-tabla tbody tr:hover {
+  background: #f9fafb;
+}
+
+.qr-tabla td strong {
+  color: #111827;
+}
+
+
+/* ==========================================
+   PRODUCTO
+========================================== */
+
+.qr-producto {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.qr-producto small {
+  color: #6b7280;
+  max-width: 250px;
+}
+
+
+/* ==========================================
+   ESTADO QR
+========================================== */
+
+.qr-estado {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.qr-estado.activo {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.qr-estado.sin-qr {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+
+/* ==========================================
+   BOTONES
+========================================== */
+
+.qr-acciones {
+  display: flex;
+  gap: 7px;
+}
+
+.qr-btn {
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+  white-space: nowrap;
+}
+
+.qr-btn:hover {
+  transform: translateY(-1px);
+}
+
+.qr-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.qr-btn.ver {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.qr-btn.generar {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.qr-btn.azul {
+  background: #2563eb;
+  color: white;
+}
+
+.qr-btn.descargar {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.qr-btn.regenerar {
+  background: #2563eb;
+  color: white;
+}
+
+.qr-btn.desactivar {
+  background: #dc2626;
+  color: white;
+}
+
+
+/* ==========================================
+   ESTADO CARGANDO
+========================================== */
+
+.qr-cargando {
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+}
+
+.qr-spinner {
+  width: 38px;
+  height: 38px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: qr-girar 0.8s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes qr-girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+/* ==========================================
+   SIN LOTES
+========================================== */
+
+.qr-vacio {
+  text-align: center;
+  padding: 70px 20px;
+}
+
+.qr-vacio-icono {
+  font-size: 50px;
+  margin-bottom: 15px;
+}
+
+.qr-vacio h3 {
+  margin: 0 0 8px;
+  color: #111827;
+}
+
+.qr-vacio p {
+  color: #6b7280;
+  margin: 0;
+}
+
+
+/* ==========================================
+   MODAL
+========================================== */
+
+.qr-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.qr-modal {
+  width: 100%;
+  max-width: 850px;
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.qr-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 22px 26px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.qr-modal-header h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 21px;
+}
+
+.qr-modal-header p {
+  margin: 5px 0 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.qr-modal-cerrar {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-size: 30px;
+  line-height: 30px;
+  cursor: pointer;
+}
+
+.qr-modal-cerrar:hover {
+  color: #111827;
+}
+
+
+/* ==========================================
+   CONTENIDO MODAL
+========================================== */
+
+.qr-modal-contenido {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 35px;
+  padding: 30px;
+}
+
+
+/* ==========================================
+   IMAGEN QR
+========================================== */
+
+.qr-imagen-contenedor {
+  min-height: 380px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+}
+
+.qr-imagen {
+  width: 330px;
+  max-width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.qr-sin-imagen {
+  color: #6b7280;
+  text-align: center;
+  padding: 20px;
+}
+
+
+/* ==========================================
+   INFORMACIÓN QR
+========================================== */
+
+.qr-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.qr-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.qr-info-item span {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.qr-info-item strong {
+  font-size: 16px;
+  color: #111827;
+}
+
+.qr-info-item.url {
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.qr-info-item.url a {
+  color: #2563eb;
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.qr-texto-activo {
+  color: #16a34a !important;
+}
+
+
+/* ==========================================
+   ACCIONES DEL MODAL
+========================================== */
+
+.qr-modal-acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 8px;
+}
+
+.qr-modal-acciones .qr-btn {
+  width: 100%;
+  padding: 11px;
+}
+
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width: 900px) {
+
+  .qr-estadisticas {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .qr-modal-contenido {
+    grid-template-columns: 1fr;
+  }
+
+  .qr-imagen-contenedor {
+    min-height: 320px;
+  }
+
+}
+
+
+@media (max-width: 600px) {
+
+  .qr-estadisticas {
+    grid-template-columns: 1fr;
+  }
+
+  .qr-header h1 {
+    font-size: 26px;
+  }
+
+  .qr-contenedor-header {
+    align-items: flex-start;
+    gap: 15px;
+    flex-direction: column;
+  }
+
+  .qr-modal {
+    max-height: 95vh;
+    overflow-y: auto;
+  }
+
+  .qr-modal-contenido {
+    padding: 20px;
+  }
+
+  .qr-imagen {
+    width: 260px;
+  }
+
+}
+/* ==========================================
+   AISLAR LA INFORMACIÓN DEL MODAL DE LOS
+   ESTILOS DE ConsultaPublicaQR.css
+========================================== */
+
+.qr-modal .qr-info-item {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.qr-modal .qr-info-item span:first-child {
+  margin-bottom: 0;
+}
+
+.qr-modal .qr-info-item strong {
+  font-size: 16px;
+  line-height: normal;
+}
+
+.qr-modal .qr-info-item.url {
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+}

@@ -1,0 +1,14 @@
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhOWM3NzY1MjBjODA1MDM4MWM4YTk2NyIsInJvbCI6ImFkbWluaXN0cmFkb3IiLCJpYXQiOjE3ODg2MzkwNzcsImV4cCI6MTc4OTI0Mzg3N30.8vCEDtlUnLloeWTk992i6xi-x0AcLQOwtzmyMfjr5b0
+
+
+
+{
+  "email": "admin@trazabilidad.com",
+  "password": "123456"
+}
+
+
+id asociación: 6a9c7b413a8bf74ffdd9ce6a
+id productor: 6a9c7bd63a8bf74ffdd9ce6b
+id lote: 6a9dba64a28d65a72d664b69
+token qr: ea1cb53f067992ad9478c5aadd8859e9add9c347e21d8dae9b4193b435e4550c

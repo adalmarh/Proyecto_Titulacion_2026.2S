@@ -17,12 +17,10 @@ const {
   limpiarSolicitudesRechazadas,
   validarDatosSolicitud,
   direccionCompleta,
+  ubicacionFinca,
   filtroSolicitudes,
   puedeRevisar
 } = require("../controllers/solicitudController");
-
-const ASOC_1 = "64b000000000000000000001";
-const ASOC_2 = "64b000000000000000000002";
 
 const base = {
   nombre: "Pedro",
@@ -36,8 +34,7 @@ const base = {
   email: "Pedro@Finca.ec ",
   password: "cacao123",
   aceptaPrivacidad: true,
-  rolSolicitado: "productor",
-  asociacion: ASOC_1
+  rolSolicitado: "productor"
 };
 
 const falla = (datos, texto) =>
@@ -64,12 +61,14 @@ test("una solicitud válida se normaliza", () => {
   const datos = validarDatosSolicitud(base);
   assert.equal(datos.email, "pedro@finca.ec");
   assert.equal(datos.rolSolicitado, "productor");
-  assert.equal(datos.asociacion, ASOC_1);
+  assert.equal(datos.asociacion, undefined, "ya no se pide asociación");
 });
 
-test("no se pueden pedir los roles administrador ni certificador", () => {
-  falla({ ...base, rolSolicitado: "administrador" }, "productor o de asociación");
-  falla({ ...base, rolSolicitado: "certificador" }, "productor o de asociación");
+test("solo se piden cuentas de productor", () => {
+  falla({ ...base, rolSolicitado: "administrador" }, "Solo se pueden solicitar cuentas de productor");
+  falla({ ...base, rolSolicitado: "certificador" }, "Solo se pueden solicitar cuentas de productor");
+  falla({ ...base, rolSolicitado: "asociacion" }, "Solo se pueden solicitar cuentas de productor");
+  assert.equal(validarDatosSolicitud({ ...base, rolSolicitado: undefined }).rolSolicitado, "productor", "sin tipo, es productor");
 });
 
 test("datos obligatorios y formatos", () => {
@@ -100,10 +99,9 @@ test("celular y ubicación son obligatorios para verificar en campo", () => {
   assert.equal(datos.telefono, "0991234567", "se guarda sin espacios");
 });
 
-test("la asociación no necesita parroquia, pero sí la dirección de su sede", () => {
-  const asoc = { ...base, rolSolicitado: "asociacion", parroquia: "" };
-  assert.equal(validarDatosSolicitud(asoc).parroquia, "");
-  falla({ ...asoc, direccion: "" }, "sede");
+test("la parroquia y la forma de llegar a la finca son obligatorias", () => {
+  falla({ ...base, parroquia: "" }, "parroquia");
+  falla({ ...base, direccion: "cerca" }, "finca");
 });
 
 test("la dirección de la ficha del productor se arma en una línea", () => {
@@ -113,42 +111,27 @@ test("la dirección de la ficha del productor se arma en una línea", () => {
   );
 });
 
+test("la ubicación de la finca pasa a la ficha del productor", () => {
+  assert.deepEqual(ubicacionFinca(validarDatosSolicitud(base)), {
+    provincia: "Guayas",
+    canton: "Milagro",
+    parroquia: "Recinto Los Monos",
+    descripcion: "Finca La Ceiba, km 5 vía a Naranjito"
+  });
+});
+
 test("sin aceptar el aviso de privacidad no se envía la solicitud", () => {
   falla({ ...base, aceptaPrivacidad: false }, "aviso de privacidad");
   falla({ ...base, aceptaPrivacidad: undefined }, "aviso de privacidad");
   falla({ ...base, aceptaPrivacidad: "si" }, "aviso de privacidad");
 });
 
-test("el productor debe indicar su asociación", () => {
-  falla({ ...base, asociacion: "" }, "asociación");
-  falla({ ...base, asociacion: "no-es-un-id" }, "asociación");
-});
-
-test("la asociación puede elegir una existente o escribir el nombre de una nueva", () => {
-  const nueva = validarDatosSolicitud({ ...base, rolSolicitado: "asociacion", asociacion: "", nombreAsociacion: "Cacao Fino del Guayas" });
-  assert.equal(nueva.asociacion, null);
-  assert.equal(nueva.nombreAsociacion, "Cacao Fino del Guayas");
-  falla({ ...base, rolSolicitado: "asociacion", asociacion: "", nombreAsociacion: "" }, "asociación");
-});
-
-test("quién revisa cada solicitud", () => {
-  const admin = { rol: "administrador" };
-  const asoc1 = { rol: "asociacion", asociacion: ASOC_1 };
-  const productor = { rol: "productor" };
-
-  const deProductorA1 = { rolSolicitado: "productor", asociacion: ASOC_1 };
-  const deProductorA2 = { rolSolicitado: "productor", asociacion: ASOC_2 };
-  const deAsociacion = { rolSolicitado: "asociacion", asociacion: ASOC_1 };
-
-  assert.equal(puedeRevisar(admin, deProductorA2), true);
-  assert.equal(puedeRevisar(admin, deAsociacion), true);
-  assert.equal(puedeRevisar(asoc1, deProductorA1), true);
-  assert.equal(puedeRevisar(asoc1, deProductorA2), false, "productor de otra asociación");
-  assert.equal(puedeRevisar(asoc1, deAsociacion), false, "solo el administrador aprueba asociaciones");
-  assert.equal(puedeRevisar(productor, deProductorA1), false);
-
-  assert.deepEqual(filtroSolicitudes(admin), {});
-  assert.deepEqual(filtroSolicitudes(asoc1), { rolSolicitado: "productor", asociacion: ASOC_1 });
+test("solo el administrador revisa las solicitudes", () => {
+  assert.equal(puedeRevisar({ rol: "administrador" }), true);
+  assert.equal(puedeRevisar({ rol: "asociacion" }), false, "rol eliminado");
+  assert.equal(puedeRevisar({ rol: "productor" }), false);
+  assert.equal(puedeRevisar({ rol: "certificador" }), false);
+  assert.deepEqual(filtroSolicitudes(), {});
 });
 
 test("el limitador corta después del máximo de peticiones", () => {

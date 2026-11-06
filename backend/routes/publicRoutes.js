@@ -9,11 +9,11 @@ const {
 } = require("../controllers/certificacionController");
 
 const {
-  listarAsociacionesPublicas,
   crearSolicitud
 } = require("../controllers/solicitudController");
 
 const crearLimitador = require("../utils/limitador");
+const { datosEmpresa } = require("../utils/empresa");
 
 const router =
   express.Router();
@@ -41,14 +41,21 @@ router.get(
 
 
 // ==========================================
-// SOLICITUD DE CUENTA (desde el inicio de sesión)
-// Máximo 5 solicitudes por hora desde una misma red.
+// DATOS DE LA EMPRESA (nombre, RUC, ciudad)
+// Los muestran el inicio de sesión y la
+// solicitud de cuenta.
 // ==========================================
 
 router.get(
-  "/asociaciones",
-  listarAsociacionesPublicas
+  "/empresa",
+  (req, res) => res.json(datosEmpresa())
 );
+
+
+// ==========================================
+// SOLICITUD DE CUENTA (desde el inicio de sesión)
+// Máximo 5 solicitudes por hora desde una misma red.
+// ==========================================
 
 router.post(
   "/solicitudes",

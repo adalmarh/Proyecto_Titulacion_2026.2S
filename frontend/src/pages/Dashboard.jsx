@@ -15,7 +15,6 @@ import {
 } from "react-icons/lu";
 
 import api from "../services/api";
-import { usePermisos, ROLES } from "../utils/permisos";
 import {
   NOMBRE_ESTADO_LOTE,
   NOMBRE_ESTADO_CERTIFICACION,
@@ -27,9 +26,9 @@ import { iconoEvento } from "../utils/iconos";
 
 
 // ==========================================================
-// DASHBOARD (administrador y asociación)
-// Los datos ya llegan filtrados por el backend según el rol:
-// la asociación solo ve los de su asociación.
+// DASHBOARD (administrador)
+// Resumen de todos los productores, lotes y certificaciones
+// de la empresa.
 // ==========================================================
 
 const lista = (datos, clave) =>
@@ -79,8 +78,6 @@ const Barras = ({ filas, icono = false }) => {
 
 const Dashboard = () => {
 
-  const { rol } = usePermisos();
-  const esAsociacion = rol === ROLES.ASOCIACION;
 
   const [lotes, setLotes] = useState([]);
   const [productores, setProductores] = useState([]);
@@ -187,9 +184,7 @@ const Dashboard = () => {
             Dashboard
           </h1>
           <p>
-            {esAsociacion
-              ? "Resumen de los productores, lotes y certificaciones de tu asociación."
-              : "Resumen general del sistema de trazabilidad de cacao fino de aroma."}
+            Resumen general del sistema de trazabilidad de cacao fino de aroma.
           </p>
         </div>
 

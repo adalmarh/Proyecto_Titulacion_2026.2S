@@ -1,5 +1,4 @@
 const Productor = require("../models/Productor");
-const Asociacion = require("../models/Asociacion");
 const {
   filtroProductores
 } = require("../middleware/alcanceMiddleware");
@@ -16,21 +15,12 @@ cedula,
 telefono,
 email,
 direccion,
-asociacion
+ubicacion
 } = req.body;
 
-if (!nombre || !apellido || !cedula || !asociacion) {
+if (!nombre || !apellido || !cedula) {
   return res.status(400).json({
-    mensaje: "Nombre, apellido, cédula y asociación son obligatorios"
-  });
-}
-
-// Verificar asociación
-const asociacionExiste = await Asociacion.findById(asociacion);
-
-if (!asociacionExiste) {
-  return res.status(404).json({
-    mensaje: "La asociación no existe"
+    mensaje: "Nombre, apellido y cédula son obligatorios"
   });
 }
 
@@ -50,13 +40,12 @@ const productor = await Productor.create({
   telefono,
   email,
   direccion,
-  asociacion
+  ubicacion
   // La cuenta de acceso (campo "usuario") se vincula
   // desde la gestión de usuarios del administrador.
 });
 
-const productorCompleto = await Productor.findById(productor._id)
-  .populate("asociacion", "nombre ruc");
+const productorCompleto = await Productor.findById(productor._id);
 
 res.status(201).json({
   mensaje: "Productor registrado correctamente",
@@ -79,7 +68,6 @@ try {
 // Cada rol ve solo los productores de su alcance
 const filtro = await filtroProductores(req);
 const productores = await Productor.find(filtro)
-.populate("asociacion", "nombre ruc provincia canton")
 .sort({ createdAt: -1 });
 
 res.status(200).json(productores);
@@ -102,8 +90,7 @@ $and: [
   { _id: req.params.id },
   await filtroProductores(req)
 ]
-})
-.populate("asociacion", "nombre ruc provincia canton");
+});
 
 if (!productor) {
   return res.status(404).json({
@@ -136,7 +123,7 @@ datosActualizacion,
 new: true,
 runValidators: true
 }
-).populate("asociacion", "nombre ruc");
+);
 
 if (!productor) {
   return res.status(404).json({

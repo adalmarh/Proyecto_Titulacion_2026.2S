@@ -35,9 +35,9 @@ const Navbar = ({
       </button>
 
 
-      {/* TÍTULO: el sistema, o la asociación del usuario */}
+      {/* TÍTULO: la empresa a la que pertenecen los productores */}
       <div className="navbar-title">
-        {usuario?.asociacion?.nombre || "Sistema de Trazabilidad"}
+        {usuario?.empresa?.nombre || "Sistema de Trazabilidad"}
       </div>
 
 

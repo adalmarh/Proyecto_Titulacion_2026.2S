@@ -144,10 +144,10 @@ const MiPerfil = () => {
               <dd>{usuario?.email}</dd>
               <dt>Rol</dt>
               <dd>{NOMBRE_ROL[usuario?.rol] || usuario?.rol}</dd>
-              {usuario?.asociacion?.nombre && (
+              {usuario?.empresa?.nombre && (
                 <>
-                  <dt>Asociación</dt>
-                  <dd>{usuario.asociacion.nombre}</dd>
+                  <dt>Empresa</dt>
+                  <dd>{usuario.empresa.nombre}</dd>
                 </>
               )}
               <dt>Privacidad</dt>

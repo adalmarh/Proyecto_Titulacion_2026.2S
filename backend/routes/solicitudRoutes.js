@@ -15,16 +15,14 @@ const router = express.Router();
 
 // ==========================================
 // REVISIÓN DE SOLICITUDES DE CUENTA
-// Administrador: todas.
-// Asociación: solo las de productores que
-// indicaron pertenecer a su asociación.
+// Solo el administrador (la empresa).
 // (El envío de solicitudes es público y está
 // en publicRoutes.)
 // ==========================================
 
 router.use(
   protegerRuta,
-  permitirRoles("administrador", "asociacion")
+  permitirRoles("administrador")
 );
 
 router.get("/", obtenerSolicitudes);

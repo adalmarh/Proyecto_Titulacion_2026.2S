@@ -1,5 +1,6 @@
 const PDFDocument = require("pdfkit");
 const QRCode = require("qrcode");
+const { datosEmpresa } = require("./empresa");
 
 
 // ==========================================================
@@ -50,7 +51,7 @@ const generarCertificadoPDF = async (certificacion, { urlVerificacion }) => {
 
   const lote = certificacion.lote || {};
   const productor = lote.productor || {};
-  const asociacion = lote.asociacion || {};
+  const empresa = datosEmpresa();
   const ubicacion = lote.ubicacion || {};
 
   const qr = await QRCode.toBuffer(urlVerificacion, {
@@ -64,7 +65,7 @@ const generarCertificadoPDF = async (certificacion, { urlVerificacion }) => {
     margin: 0,
     info: {
       Title: `Certificado ${certificacion.codigo || ""} - ${certificacion.tipoCertificacion}`,
-      Author: "RutaCacao",
+      Author: `${empresa.nombre} · RutaCacao`,
       Subject: `Certificación de cacao fino de aroma del lote ${lote.codigo || ""}`,
       Keywords: palabrasClave(certificacion)
     }
@@ -105,7 +106,7 @@ const generarCertificadoPDF = async (certificacion, { urlVerificacion }) => {
   doc.fillColor(COLOR.texto).font("Helvetica").fontSize(11)
     .text(
       `Se certifica que el lote ${lote.codigo || ""} de ${(lote.producto || "cacao fino de aroma").toLowerCase()}, ` +
-      `producido por ${nombre(productor)}, socio de ${asociacion.nombre || "su asociación"}, ` +
+      `producido por ${nombre(productor)}, productor de ${empresa.nombre}, ` +
       "fue inspeccionado y cumple los requisitos de la certificación indicada.",
       X, 204, { width: ANCHO_UTIL, align: "center", lineGap: 3 }
     );
@@ -118,7 +119,7 @@ const generarCertificadoPDF = async (certificacion, { urlVerificacion }) => {
     ["Cantidad", lote.cantidad != null ? `${Number(lote.cantidad).toLocaleString("es-EC")} ${lote.unidad || "kg"}` : "—"],
     ["Origen", [ubicacion.parroquia, ubicacion.canton, ubicacion.provincia].filter(Boolean).join(", ") || "—"],
     ["Productor", nombre(productor)],
-    ["Asociación", asociacion.nombre || "—"],
+    ["Empresa", [empresa.nombre, empresa.ruc && `RUC ${empresa.ruc}`].filter(Boolean).join(" · ")],
     ["Resultado de la inspección", certificacion.datosCertificacion?.resultadoInspeccion || "Cumple los requisitos"],
     ["Fecha de emisión", fechaLarga(certificacion.fechaEmision)],
     ["Válido hasta", fechaLarga(certificacion.fechaVencimiento)],

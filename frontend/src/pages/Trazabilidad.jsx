@@ -27,7 +27,6 @@ import { iconoEvento } from "../utils/iconos";
 
 const NOMBRE_ROL = {
   administrador: "administrador",
-  asociacion: "asociación",
   certificador: "certificador"
 };
 
@@ -45,8 +44,8 @@ const dominio = (url) => {
 // TRAZABILIDAD
 // Historial de actividades de cada lote de cacao: siembra,
 // cosecha, fermentación, secado, transporte...
-// - Administrador, asociación y productor registran actividades.
-// - Solo el administrador y la asociación pueden eliminarlas.
+// - Administrador y productor registran actividades.
+// - Solo el administrador puede eliminarlas.
 // - El certificador las consulta.
 // ==========================================================
 
@@ -54,7 +53,6 @@ const formularioVacio = {
   tipo: "siembra",
   descripcion: "",
   fecha: "",
-  ubicacion: "",
   evidencia: ""
 };
 
@@ -153,7 +151,6 @@ const Trazabilidad = () => {
         tipo: formulario.tipo,
         descripcion: formulario.descripcion.trim(),
         fecha: formulario.fecha || undefined,
-        ubicacion: formulario.ubicacion.trim() || undefined,
         evidencia: formulario.evidencia.trim() || undefined
       });
 
@@ -197,8 +194,16 @@ const Trazabilidad = () => {
 
   // El productor del lote se muestra una sola vez en la cabecera.
   // En cada actividad solo se indica quién la registró cuando no
-  // fue el propio productor (por ejemplo, la asociación).
+  // fue el propio productor (por ejemplo, el administrador).
   const productorLote = lote ? nombreCompleto(lote.productor) : "";
+
+  // La ubicación es la del lote (siempre la misma): se muestra
+  // una vez en la cabecera y no se pide en cada actividad.
+  const ubicacionLote = lote
+    ? [lote.ubicacion?.parroquia, lote.ubicacion?.canton, lote.ubicacion?.provincia]
+      .filter(Boolean)
+      .join(", ")
+    : "";
 
   // Se decide solo por el rol: un productor solo registra en sus
   // propios lotes, así que cualquier otro rol es otra persona.
@@ -215,6 +220,12 @@ const Trazabilidad = () => {
               <span className="tz-productor">
                 <LuUser aria-hidden="true" />
                 Productor: <strong>{productorLote}</strong>
+              </span>
+            )}
+            {ubicacionLote && (
+              <span className="tz-productor">
+                <LuMapPin aria-hidden="true" />
+                {ubicacionLote}
               </span>
             )}
             <span>
@@ -271,6 +282,7 @@ const Trazabilidad = () => {
 
                     <p>{registro.descripcion}</p>
 
+                    {(registradoPorOtro(registro.responsable) || registro.evidencia) && (
                     <p className="gs-linea-meta gs-ayuda">
                       {registradoPorOtro(registro.responsable) && (
                         <span>
@@ -278,9 +290,6 @@ const Trazabilidad = () => {
                           Registrado por {nombreCompleto(registro.responsable)}
                           {NOMBRE_ROL[registro.responsable.rol] && ` (${NOMBRE_ROL[registro.responsable.rol]})`}
                         </span>
-                      )}
-                      {registro.ubicacion && (
-                        <span><LuMapPin aria-hidden="true" />{registro.ubicacion}</span>
                       )}
                       {registro.evidencia && (
                         <span className="tz-evidencia">
@@ -295,6 +304,7 @@ const Trazabilidad = () => {
                         </span>
                       )}
                     </p>
+                    )}
                   </div>
                 </li>
               );
@@ -432,18 +442,7 @@ const Trazabilidad = () => {
                   />
                 </div>
 
-                <div className="gs-campo">
-                  <label htmlFor="t-ubicacion">Ubicación</label>
-                  <input
-                    id="t-ubicacion"
-                    name="ubicacion"
-                    value={formulario.ubicacion}
-                    onChange={cambiarCampo}
-                    placeholder="Ej.: Centro de acopio"
-                  />
-                </div>
-
-                <div className="gs-campo">
+                <div className="gs-campo gs-campo-ancho">
                   <label htmlFor="t-evidencia">Evidencia</label>
                   <input
                     id="t-evidencia"

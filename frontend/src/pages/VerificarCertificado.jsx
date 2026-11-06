@@ -130,8 +130,8 @@ const VerificarCertificado = () => {
                 <dd>{[datos.lote?.canton, datos.lote?.provincia].filter(Boolean).join(", ") || "—"}</dd>
                 <dt>Productor</dt>
                 <dd>{nombre(datos.productor)}</dd>
-                <dt>Asociación</dt>
-                <dd>{datos.asociacion?.nombre || "—"}</dd>
+                <dt>Empresa</dt>
+                <dd>{datos.empresa?.nombre || "—"}</dd>
                 <dt>Emitido</dt>
                 <dd>{formatearFecha(datos.fechaEmision)}</dd>
                 <dt>Certificador</dt>

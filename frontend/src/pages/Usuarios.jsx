@@ -30,7 +30,6 @@ const formularioVacio = {
   email: "",
   password: "",
   rol: ROLES.PRODUCTOR,
-  asociacion: "",
   productor: ""
 };
 
@@ -43,7 +42,6 @@ const Usuarios = () => {
   const { usuario: usuarioActual } = useContext(AuthContext);
 
   const [usuarios, setUsuarios] = useState([]);
-  const [asociaciones, setAsociaciones] = useState([]);
   const [productores, setProductores] = useState([]);
 
   const [cargando, setCargando] = useState(true);
@@ -68,15 +66,13 @@ const Usuarios = () => {
       setCargando(true);
       setError("");
 
-      const [resUsuarios, resAsociaciones, resProductores] =
+      const [resUsuarios, resProductores] =
         await Promise.all([
           api.get("/usuarios"),
-          api.get("/asociaciones"),
           api.get("/productores")
         ]);
 
       setUsuarios(resUsuarios.data.usuarios || []);
-      setAsociaciones(resAsociaciones.data || []);
       setProductores(resProductores.data || []);
 
     } catch (err) {
@@ -144,7 +140,6 @@ const Usuarios = () => {
       email: u.email,
       password: "",
       rol: u.rol,
-      asociacion: idDe(u.asociacion),
       productor: idDe(u.productor)
     });
     setError("");
@@ -190,10 +185,6 @@ const Usuarios = () => {
 
     if (formulario.password) {
       datos.password = formulario.password;
-    }
-
-    if (formulario.rol === ROLES.ASOCIACION) {
-      datos.asociacion = formulario.asociacion;
     }
 
     if (formulario.rol === ROLES.PRODUCTOR) {
@@ -263,12 +254,6 @@ const Usuarios = () => {
   // ========================================
 
   const descripcionVinculo = (u) => {
-    if (u.rol === ROLES.ASOCIACION) {
-      return u.asociacion?.nombre || (
-        <span className="gs-aviso">Sin asociación vinculada</span>
-      );
-    }
-
     if (u.rol === ROLES.PRODUCTOR) {
       return u.productor
         ? `${u.productor.nombre} ${u.productor.apellido}`
@@ -297,8 +282,8 @@ const Usuarios = () => {
             Usuarios
           </h1>
           <p>
-            Crea las cuentas de acceso y vincúlalas con su
-            asociación o productor según el rol.
+            Crea las cuentas de acceso. Las de productor se
+            vinculan con su ficha de productor.
           </p>
         </div>
 
@@ -558,31 +543,6 @@ const Usuarios = () => {
                 </div>
 
                 {/* VÍNCULO SEGÚN EL ROL */}
-                {formulario.rol === ROLES.ASOCIACION && (
-                  <div className="gs-campo gs-campo-ancho">
-                    <label htmlFor="u-asociacion">Asociación</label>
-                    <select
-                      id="u-asociacion"
-                      name="asociacion"
-                      value={formulario.asociacion}
-                      onChange={cambiarCampo}
-                      required
-                    >
-                      <option value="">Seleccione la asociación</option>
-                      {asociaciones
-                        .filter((a) => a.activa !== false)
-                        .map((a) => (
-                          <option key={a._id} value={a._id}>
-                            {a.nombre}
-                          </option>
-                        ))}
-                    </select>
-                    <span className="gs-ayuda">
-                      Solo verá y gestionará los datos de esta asociación.
-                    </span>
-                  </div>
-                )}
-
                 {formulario.rol === ROLES.PRODUCTOR && (
                   <div className="gs-campo gs-campo-ancho">
                     <label htmlFor="u-productor">Productor</label>

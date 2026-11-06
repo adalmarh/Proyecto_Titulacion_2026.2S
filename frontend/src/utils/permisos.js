@@ -9,14 +9,12 @@ import { AuthContext } from "../context/AuthContext";
 
 export const ROLES = {
   ADMIN: "administrador",
-  ASOCIACION: "asociacion",
   PRODUCTOR: "productor",
   CERTIFICADOR: "certificador"
 };
 
 export const NOMBRE_ROL = {
   administrador: "Administrador",
-  asociacion: "Asociación",
   productor: "Productor",
   certificador: "Certificador"
 };
@@ -36,28 +34,27 @@ const es = (rol, ...roles) => roles.includes(rol);
 
 export const obtenerPermisos = (rol) => ({
   // Lotes
-  gestionarLotes: es(rol, ROLES.ADMIN, ROLES.ASOCIACION),
+  gestionarLotes: es(rol, ROLES.ADMIN),
 
-  // Productores y asociaciones
-  gestionarProductores: es(rol, ROLES.ADMIN, ROLES.ASOCIACION),
-  gestionarAsociaciones: es(rol, ROLES.ADMIN),
+  // Productores
+  gestionarProductores: es(rol, ROLES.ADMIN),
 
   // Trazabilidad
-  registrarEventos: es(rol, ROLES.ADMIN, ROLES.ASOCIACION, ROLES.PRODUCTOR),
-  eliminarEventos: es(rol, ROLES.ADMIN, ROLES.ASOCIACION),
+  registrarEventos: es(rol, ROLES.ADMIN, ROLES.PRODUCTOR),
+  eliminarEventos: es(rol, ROLES.ADMIN),
 
   // Certificaciones
-  solicitarCertificacion: es(rol, ROLES.ADMIN, ROLES.ASOCIACION, ROLES.PRODUCTOR),
+  solicitarCertificacion: es(rol, ROLES.ADMIN, ROLES.PRODUCTOR),
   asignarCertificador: es(rol, ROLES.ADMIN),
   resolverCertificacion: es(rol, ROLES.ADMIN, ROLES.CERTIFICADOR),
 
   // Códigos QR
-  generarQR: es(rol, ROLES.ADMIN, ROLES.ASOCIACION, ROLES.PRODUCTOR),
-  administrarQR: es(rol, ROLES.ADMIN, ROLES.ASOCIACION),
+  generarQR: es(rol, ROLES.ADMIN, ROLES.PRODUCTOR),
+  administrarQR: es(rol, ROLES.ADMIN),
 
   // Usuarios y solicitudes de cuenta
   gestionarUsuarios: es(rol, ROLES.ADMIN),
-  revisarSolicitudes: es(rol, ROLES.ADMIN, ROLES.ASOCIACION)
+  revisarSolicitudes: es(rol, ROLES.ADMIN)
 });
 
 

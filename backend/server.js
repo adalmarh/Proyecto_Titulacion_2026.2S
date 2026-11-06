@@ -22,10 +22,6 @@ const authRoutes = require(
   "./routes/authRoutes"
 );
 
-const asociacionRoutes = require(
-  "./routes/asociacionRoutes"
-);
-
 const productorRoutes = require(
   "./routes/productorRoutes"
 );
@@ -115,12 +111,6 @@ app.use(
   authRoutes
 );
 
-
-// ASOCIACIONES
-app.use(
-  "/api/asociaciones",
-  asociacionRoutes
-);
 
 
 // PRODUCTORES

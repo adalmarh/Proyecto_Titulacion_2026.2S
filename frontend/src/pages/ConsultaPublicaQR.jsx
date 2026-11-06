@@ -175,7 +175,7 @@ const PantallaError = ({ tipo, reintentar }) => (
           <LuQrCode className="cp-error-icono" aria-hidden="true" />
           <h1>Este código QR no está activo</h1>
           <p>
-            Puede que la asociación lo haya reemplazado por uno nuevo.
+            Puede que la empresa lo haya reemplazado por uno nuevo.
             Escanea el código impreso más reciente o consulta al vendedor.
           </p>
         </>
@@ -239,11 +239,11 @@ const ConsultaPublicaQR = () => {
   }
 
 
-  const { lote, productor, asociacion, trazabilidad, certificacion, certificaciones, qr } = datos;
+  const { lote, productor, empresa, trazabilidad, certificacion, certificaciones, qr } = datos;
 
   const origen = lugar(
-    lote.ubicacion?.canton || asociacion?.canton,
-    lote.ubicacion?.provincia || asociacion?.provincia
+    lote.ubicacion?.canton,
+    lote.ubicacion?.provincia
   );
 
   const cosecha = lote.fechaCosecha
@@ -278,10 +278,10 @@ const ConsultaPublicaQR = () => {
                 </p>
               )}
 
-              {asociacion && (
+              {empresa?.nombre && (
                 <p className="cp-productor-linea">
                   Producido por {nombre(productor) || "productores"} de{" "}
-                  {asociacion.nombre}
+                  {empresa.nombre}
                 </p>
               )}
 
@@ -368,9 +368,8 @@ const ConsultaPublicaQR = () => {
 
                         <p>{evento.descripcion}</p>
 
-                        {(evento.ubicacion || evento.responsable) && (
+                        {evento.responsable && (
                           <p className="cp-recorrido-meta">
-                            {evento.ubicacion && <span>{evento.ubicacion}</span>}
                             {evento.responsable && (
                               <span>
                                 Registró: {nombre(evento.responsable)}
@@ -412,11 +411,10 @@ const ConsultaPublicaQR = () => {
                 <p className="cp-persona">{nombre(productor)}</p>
               )}
 
-              {asociacion && (
+              {empresa?.nombre && (
                 <p className="cp-detalle">
-                  Miembro de {asociacion.nombre}
-                  {lugar(asociacion.canton, asociacion.provincia) &&
-                    `, ${lugar(asociacion.canton, asociacion.provincia)}`}
+                  Productor de {empresa.nombre}
+                  {empresa.ciudad && `, ${empresa.ciudad}`}
                 </p>
               )}
 
@@ -506,7 +504,7 @@ const ConsultaPublicaQR = () => {
                   {certificacion.estado === "vencida" &&
                     "El lote tuvo una certificación aprobada, pero su vigencia ya terminó."}
                   {certificacion.estado === "en_tramite" &&
-                    "La asociación solicitó una certificación y un certificador la está evaluando."}
+                    "Se solicitó una certificación y un certificador la está evaluando."}
                   {certificacion.estado === "sin_certificacion" &&
                     "Este lote todavía no cuenta con una certificación aprobada en el sistema."}
                 </p>
@@ -537,7 +535,7 @@ const ConsultaPublicaQR = () => {
       <footer className="cp-pie">
         <div className="cp-ancho">
           <p>
-            Información registrada por la asociación y sus productores en
+            Información registrada por {empresa?.nombre || "la empresa"} y sus productores en
             RutaCacao, sistema de trazabilidad de cacao fino de aroma.
           </p>
           <p>

@@ -5,10 +5,9 @@ const mongoose = require("mongoose");
 // SOLICITUD DE CUENTA
 // Una persona pide acceso desde la pantalla de
 // inicio de sesión. La cuenta (Usuario) solo se
-// crea cuando el administrador, o la asociación
-// en el caso de sus productores, la aprueba.
-// Solo se pueden pedir los roles "productor" y
-// "asociacion"; nunca administrador ni certificador.
+// crea cuando el administrador la aprueba.
+// Solo se pueden pedir cuentas de productor;
+// nunca administrador ni certificador.
 // ==========================================
 
 const solicitudCuentaSchema = new mongoose.Schema(
@@ -58,12 +57,14 @@ const solicitudCuentaSchema = new mongoose.Schema(
 
     rolSolicitado: {
       type: String,
-      enum: ["productor", "asociacion"],
-      required: true
+      // Solo productores: la empresa es única y la
+      // administra el administrador.
+      enum: ["productor"],
+      default: "productor"
     },
 
     // ---------- Ubicación para verificar en campo ----------
-    // Productor: dónde está su finca. Asociación: su sede.
+    // Dónde está la finca del productor.
     provincia: {
       type: String,
       trim: true,
@@ -85,21 +86,6 @@ const solicitudCuentaSchema = new mongoose.Schema(
 
     // Dirección o referencia para llegar
     direccion: {
-      type: String,
-      trim: true,
-      default: ""
-    },
-
-    // Asociación a la que pertenece (productor) o
-    // que quiere administrar (asociación)
-    asociacion: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Asociacion",
-      default: null
-    },
-
-    // Si la asociación aún no está registrada
-    nombreAsociacion: {
       type: String,
       trim: true,
       default: ""
@@ -146,7 +132,6 @@ const solicitudCuentaSchema = new mongoose.Schema(
 );
 
 solicitudCuentaSchema.index({ email: 1, estado: 1 });
-solicitudCuentaSchema.index({ asociacion: 1, estado: 1 });
 
 
 module.exports = mongoose.model("SolicitudCuenta", solicitudCuentaSchema);

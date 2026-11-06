@@ -14,8 +14,8 @@ const protegerRuta = require("../middleware/authMiddleware");
 const permitirRoles = require("../middleware/rolesMiddleware");
 
 const {
-  accesoLote,
-  forzarAsociacionPropia
+  accesoLote
+
 } = require("../middleware/alcanceMiddleware");
 
 const router = express.Router();
@@ -49,21 +49,19 @@ router.get(
 // ==========================================
 // GESTIÓN
 // Administrador: cualquier lote.
-// Asociación: solo los lotes de su asociación.
 // ==========================================
 
 router.post(
   "/",
   protegerRuta,
-  permitirRoles("administrador", "asociacion"),
-  forzarAsociacionPropia,
+  permitirRoles("administrador"),
   crearLote
 );
 
 router.put(
   "/:id",
   protegerRuta,
-  permitirRoles("administrador", "asociacion"),
+  permitirRoles("administrador"),
   accesoLote(loteDeLaUrl, "gestionar"),
   actualizarLote
 );
@@ -71,7 +69,7 @@ router.put(
 router.patch(
   "/:id/estado",
   protegerRuta,
-  permitirRoles("administrador", "asociacion"),
+  permitirRoles("administrador"),
   accesoLote(loteDeLaUrl, "gestionar"),
   actualizarEstadoLote
 );
@@ -79,7 +77,7 @@ router.patch(
 router.patch(
   "/:id/desactivar",
   protegerRuta,
-  permitirRoles("administrador", "asociacion"),
+  permitirRoles("administrador"),
   accesoLote(loteDeLaUrl, "gestionar"),
   desactivarLote
 );

@@ -64,7 +64,6 @@ router.post(
   protegerRuta,
   permitirRoles(
     "administrador",
-    "asociacion",
     "productor"
   ),
   accesoLote((req) => req.body && req.body.lote, "gestionar"),
@@ -83,7 +82,6 @@ router.put(
   protegerRuta,
   permitirRoles(
     "administrador",
-    "asociacion",
     "productor"
   ),
   accesoEvento("gestionar"),
@@ -99,8 +97,7 @@ router.delete(
   "/:id",
   protegerRuta,
   permitirRoles(
-    "administrador",
-    "asociacion"
+    "administrador"
   ),
   accesoEvento("gestionar"),
   eliminarEvento

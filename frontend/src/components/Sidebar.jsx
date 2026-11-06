@@ -5,7 +5,6 @@ import {
   LuLayoutDashboard,
   LuPackage,
   LuTractor,
-  LuBuilding2,
   LuUserCog,
   LuRoute,
   LuBadgeCheck,
@@ -21,7 +20,7 @@ import { ROLES } from "../utils/permisos";
 import "./Sidebar.css";
 
 
-const { ADMIN, ASOCIACION, PRODUCTOR, CERTIFICADOR } = ROLES;
+const { ADMIN, PRODUCTOR, CERTIFICADOR } = ROLES;
 
 
 // ==========================================
@@ -36,45 +35,39 @@ const OPCIONES_MENU = [
     icono: LuLayoutDashboard,
     texto: "Dashboard",
     titulos: { productor: "Mi panel", certificador: "Mi panel" },
-    roles: [ADMIN, ASOCIACION, PRODUCTOR, CERTIFICADOR]
+    roles: [ADMIN, PRODUCTOR, CERTIFICADOR]
   },
   {
     ruta: "/lotes",
     icono: LuPackage,
     texto: "Lotes",
     titulos: { productor: "Mis lotes" },
-    roles: [ADMIN, ASOCIACION, PRODUCTOR]
+    roles: [ADMIN, PRODUCTOR]
   },
   {
     ruta: "/productores",
     icono: LuTractor,
     texto: "Productores",
-    roles: [ADMIN, ASOCIACION]
-  },
-  {
-    ruta: "/asociaciones",
-    icono: LuBuilding2,
-    texto: "Asociaciones",
     roles: [ADMIN]
   },
   {
     ruta: "/trazabilidad",
     icono: LuRoute,
     texto: "Trazabilidad",
-    roles: [ADMIN, ASOCIACION, PRODUCTOR, CERTIFICADOR]
+    roles: [ADMIN, PRODUCTOR, CERTIFICADOR]
   },
   {
     ruta: "/certificaciones",
     icono: LuBadgeCheck,
     texto: "Certificaciones",
     titulos: { certificador: "Mis certificaciones" },
-    roles: [ADMIN, ASOCIACION, PRODUCTOR, CERTIFICADOR]
+    roles: [ADMIN, PRODUCTOR, CERTIFICADOR]
   },
   {
     ruta: "/qr",
     icono: LuQrCode,
     texto: "Códigos QR",
-    roles: [ADMIN, ASOCIACION, PRODUCTOR]
+    roles: [ADMIN, PRODUCTOR]
   },
   {
     ruta: "/usuarios",
@@ -87,7 +80,7 @@ const OPCIONES_MENU = [
     icono: LuInbox,
     texto: "Solicitudes",
     contador: true,
-    roles: [ADMIN, ASOCIACION]
+    roles: [ADMIN]
   }
 ];
 
@@ -104,11 +97,11 @@ const Sidebar = ({
     (opcion) => opcion.roles.includes(rol)
   );
 
-  // Solicitudes de cuenta pendientes (administrador y asociación).
+  // Solicitudes de cuenta pendientes (administrador).
   // Se actualiza al cambiar de página y cuando se revisa una.
   const { pathname } = useLocation();
   const [pendientes, setPendientes] = useState(0);
-  const revisaSolicitudes = rol === ADMIN || rol === ASOCIACION;
+  const revisaSolicitudes = rol === ADMIN;
 
   useEffect(() => {
     if (!revisaSolicitudes) return undefined;

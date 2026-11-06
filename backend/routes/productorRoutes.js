@@ -12,9 +12,8 @@ const protegerRuta = require("../middleware/authMiddleware");
 const permitirRoles = require("../middleware/rolesMiddleware");
 
 const {
-  accesoProductor,
-  forzarAsociacionPropia,
-  soloAdminPuedeCambiar
+  accesoProductor
+
 } = require("../middleware/alcanceMiddleware");
 
 const router = express.Router();
@@ -42,31 +41,27 @@ router.get(
 // ==========================================
 // GESTIÓN
 // Administrador: cualquier productor.
-// Asociación: solo los de su asociación, y no
-// puede cambiarlos de asociación.
 // ==========================================
 
 router.post(
   "/",
   protegerRuta,
-  permitirRoles("administrador", "asociacion"),
-  forzarAsociacionPropia,
+  permitirRoles("administrador"),
   crearProductor
 );
 
 router.put(
   "/:id",
   protegerRuta,
-  permitirRoles("administrador", "asociacion"),
+  permitirRoles("administrador"),
   accesoProductor(),
-  soloAdminPuedeCambiar("asociacion"),
   actualizarProductor
 );
 
 router.patch(
   "/:id/desactivar",
   protegerRuta,
-  permitirRoles("administrador", "asociacion"),
+  permitirRoles("administrador"),
   accesoProductor(),
   desactivarProductor
 );

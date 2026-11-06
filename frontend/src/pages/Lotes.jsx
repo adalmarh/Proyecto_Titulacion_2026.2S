@@ -17,7 +17,7 @@ import {
 import api from "../services/api";
 import Modal from "../components/Modal";
 import ModalQR from "../components/ModalQR";
-import { usePermisos, ROLES } from "../utils/permisos";
+import { usePermisos } from "../utils/permisos";
 import {
   NOMBRE_ESTADO_LOTE,
   UNIDADES,
@@ -29,8 +29,8 @@ import {
 
 // ==========================================================
 // LOTES DE CACAO FINO DE AROMA
-// - Administrador y asociación: registran, editan, cambian la
-//   etapa y desactivan lotes.
+// - Administrador (la empresa): registra, edita, cambia la
+//   etapa y desactiva lotes.
 // - Productor: consulta sus lotes y gestiona su código QR.
 // El backend devuelve solo los lotes del alcance de cada rol.
 // ==========================================================
@@ -38,7 +38,6 @@ import {
 const PRODUCTO_CACAO = "Cacao fino de aroma";
 
 const formularioVacio = {
-  asociacion: "",
   productor: "",
   descripcion: "",
   provincia: "",
@@ -58,11 +57,9 @@ const fechaCampo = (valor) => (valor ? String(valor).substring(0, 10) : "");
 const Lotes = () => {
 
   const permisos = usePermisos();
-  const esAdmin = permisos.rol === ROLES.ADMIN;
 
   const [lotes, setLotes] = useState([]);
   const [productores, setProductores] = useState([]);
-  const [asociaciones, setAsociaciones] = useState([]);
 
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
@@ -100,10 +97,9 @@ const Lotes = () => {
   useEffect(() => {
     cargarLotes();
 
-    // Productores y asociaciones solo hacen falta para registrar o editar
+    // Los productores solo hacen falta para registrar o editar
     if (permisos.gestionarLotes) {
       api.get("/productores").then((r) => setProductores(r.data || [])).catch(() => {});
-      api.get("/asociaciones").then((r) => setAsociaciones(r.data || [])).catch(() => {});
     }
   }, [cargarLotes, permisos.gestionarLotes]);
 
@@ -144,16 +140,55 @@ const Lotes = () => {
   // FORMULARIO
   // ========================================
 
-  const productoresDeLaAsociacion = productores.filter(
-    (p) => p.activo !== false && idDe(p.asociacion) === formulario.asociacion
-  );
+  const productoresActivos = productores.filter((p) => p.activo !== false);
+
+  // ---------- Ubicación automática al elegir el productor ----------
+  // Se toma de la ficha del productor o, si no la tiene, de su
+  // lote más reciente. Solo se reemplazan los campos vacíos o los
+  // que se habían llenado solos (no lo que la persona escribió).
+  const [autollenado, setAutollenado] = useState(null); // { valores, origen }
+
+  const ubicacionDelProductor = (productorId) => {
+    const p = productores.find((x) => x._id === productorId);
+    const u = p?.ubicacion;
+    if (u && (u.canton || u.parroquia || u.provincia)) {
+      return { valores: u, origen: "la ficha del productor" };
+    }
+    const ultimo = lotes
+      .filter((l) => idDe(l.productor) === productorId && (l.ubicacion?.canton || l.ubicacion?.provincia))
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))[0];
+    return ultimo ? { valores: ultimo.ubicacion, origen: `su lote ${ultimo.codigo}` } : null;
+  };
+
+  const CAMPOS_UBICACION = [
+    ["provincia", "provincia"],
+    ["canton", "canton"],
+    ["parroquia", "parroquia"],
+    ["ubicacionDescripcion", "descripcion"]
+  ];
+
+  const elegirProductor = (productorId) => {
+    const encontrada = ubicacionDelProductor(productorId);
+
+    setFormulario((anterior) => {
+      const nuevo = { ...anterior, productor: productorId };
+      CAMPOS_UBICACION.forEach(([campo, origen]) => {
+        const actual = (anterior[campo] || "").trim();
+        const puesto = (autollenado?.valores?.[origen] || "").trim();
+        if (!actual || actual === puesto) {
+          nuevo[campo] = encontrada?.valores?.[origen] || "";
+        }
+      });
+      return nuevo;
+    });
+
+    setAutollenado(encontrada);
+  };
 
   const abrirNuevo = () => {
     setEditando(null);
-    setFormulario({
-      ...formularioVacio,
-      asociacion: asociaciones.length === 1 ? asociaciones[0]._id : ""
-    });
+    setAutollenado(null);
+    setFormulario({ ...formularioVacio });
     setErrorForm("");
     setMensaje("");
     setFormAbierto(true);
@@ -162,8 +197,8 @@ const Lotes = () => {
   const abrirEdicion = (lote) => {
     const u = lote.ubicacion || {};
     setEditando(lote);
+    setAutollenado(null);
     setFormulario({
-      asociacion: idDe(lote.asociacion),
       productor: idDe(lote.productor),
       descripcion: lote.descripcion || "",
       provincia: u.provincia || "",
@@ -183,11 +218,13 @@ const Lotes = () => {
 
   const cambiarCampo = (evento) => {
     const { name, value } = evento.target;
+    if (name === "productor" && !editando) {
+      elegirProductor(value);
+      return;
+    }
     setFormulario((anterior) => ({
       ...anterior,
-      [name]: value,
-      // al cambiar la asociación hay que volver a elegir el productor
-      ...(name === "asociacion" ? { productor: "" } : {})
+      [name]: value
     }));
   };
 
@@ -195,8 +232,8 @@ const Lotes = () => {
     evento.preventDefault();
     setErrorForm("");
 
-    if (!formulario.productor || !formulario.asociacion || formulario.cantidad === "") {
-      setErrorForm("Completa la asociación, el productor y la cantidad.");
+    if (!formulario.productor || formulario.cantidad === "") {
+      setErrorForm("Completa el productor y la cantidad.");
       return;
     }
 
@@ -223,9 +260,8 @@ const Lotes = () => {
         await api.put(`/lotes/${editando._id}`, datos);
         setMensaje(`Lote ${editando.codigo} actualizado correctamente`);
       } else {
-        // productor y asociación solo se envían al crear
+        // el productor solo se envía al crear
         datos.productor = formulario.productor;
-        datos.asociacion = formulario.asociacion;
         const respuesta = await api.post("/lotes", datos);
         setMensaje(
           `Lote ${respuesta.data.lote?.codigo || ""} registrado correctamente`
@@ -404,7 +440,7 @@ const Lotes = () => {
                 ? "Cambia la búsqueda o los filtros."
                 : permisos.gestionarLotes
                   ? "Registra el primero con el botón «Nuevo lote»."
-                  : "Tu asociación es quien registra los lotes."}
+                  : "La empresa es quien registra los lotes."}
             </p>
           </div>
         ) : (
@@ -437,9 +473,6 @@ const Lotes = () => {
 
                       <td>
                         <span className="gs-principal">{nombreCompleto(lote.productor)}</span>
-                        {esAdmin && (
-                          <span className="gs-secundario">{lote.asociacion?.nombre}</span>
-                        )}
                       </td>
 
                       <td style={{ whiteSpace: "nowrap" }}>
@@ -527,7 +560,7 @@ const Lotes = () => {
           titulo={editando ? `Editar lote ${editando.codigo}` : "Nuevo lote de cacao"}
           subtitulo={
             editando
-              ? "La asociación y el productor no se pueden cambiar."
+              ? "El productor no se puede cambiar."
               : "El código del lote se genera automáticamente."
           }
           onCerrar={() => setFormAbierto(false)}
@@ -546,36 +579,17 @@ const Lotes = () => {
             <div className="gs-campos">
 
               <div className="gs-campo">
-                <label htmlFor="l-asociacion">Asociación *</label>
-                <select
-                  id="l-asociacion"
-                  name="asociacion"
-                  value={formulario.asociacion}
-                  onChange={cambiarCampo}
-                  disabled={Boolean(editando) || asociaciones.length === 1}
-                  required
-                >
-                  <option value="">Seleccione la asociación</option>
-                  {asociaciones.map((a) => (
-                    <option key={a._id} value={a._id}>{a.nombre}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="gs-campo">
                 <label htmlFor="l-productor">Productor *</label>
                 <select
                   id="l-productor"
                   name="productor"
                   value={formulario.productor}
                   onChange={cambiarCampo}
-                  disabled={Boolean(editando) || !formulario.asociacion}
+                  disabled={Boolean(editando)}
                   required
                 >
-                  <option value="">
-                    {formulario.asociacion ? "Seleccione el productor" : "Primero elija la asociación"}
-                  </option>
-                  {(editando ? productores : productoresDeLaAsociacion).map((p) => (
+                  <option value="">Seleccione el productor</option>
+                  {(editando ? productores : productoresActivos).map((p) => (
                     <option key={p._id} value={p._id}>
                       {p.nombre} {p.apellido}
                     </option>
@@ -621,6 +635,14 @@ const Lotes = () => {
                   <label htmlFor="l-cosecha">Fecha real de cosecha</label>
                   <input id="l-cosecha" type="date" name="fechaCosecha" value={formulario.fechaCosecha} onChange={cambiarCampo} />
                 </div>
+              )}
+
+              {!editando && formulario.productor && (
+                <p className={`gs-campo-ancho lt-autollenado${autollenado ? "" : " lt-autollenado-vacio"}`}>
+                  {autollenado
+                    ? `Ubicación copiada de ${autollenado.origen}. Puedes cambiarla si este lote está en otra parcela.`
+                    : "Este productor aún no tiene ubicación guardada: escríbela aquí o complétala en Productores."}
+                </p>
               )}
 
               <div className="gs-campo">

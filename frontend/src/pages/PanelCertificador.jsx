@@ -350,8 +350,6 @@ const PanelCertificador = () => {
               <dd>{detalleLote.producto}</dd>
               <dt>Productor</dt>
               <dd>{nombreCompleto(detalleLote.productor)}</dd>
-              <dt>Asociación</dt>
-              <dd>{detalleLote.asociacion?.nombre || "—"}</dd>
               <dt>Cantidad</dt>
               <dd>{detalleLote.cantidad} {detalleLote.unidad || "kg"}</dd>
               <dt>Etapa</dt>

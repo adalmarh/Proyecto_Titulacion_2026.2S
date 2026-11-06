@@ -44,7 +44,7 @@ const nuevaCertificacion = () => ({
     unidad: "kg",
     ubicacion: { provincia: "Los Ríos", canton: "Quevedo" },
     productor: { nombre: "Pedro", apellido: "Alcívar", cedula: "0900000001", email: "pedro@finca.ec" },
-    asociacion: { nombre: "Asociación Cacao Arriba", provincia: "Los Ríos", canton: "Quevedo" }
+    ubicacion: { provincia: "Los Ríos", canton: "Quevedo" }
   },
   firma: { firmada: false },
   async save() { return this; }

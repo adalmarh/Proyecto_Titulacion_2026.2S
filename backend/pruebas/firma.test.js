@@ -36,7 +36,7 @@ const certificacionEjemplo = {
     cantidad: 1200,
     unidad: "kg",
     productor: { nombre: "Pedro", apellido: "Alcívar" },
-    asociacion: { nombre: "Asociación Cacao Arriba" }
+    ubicacion: { provincia: "Los Ríos", canton: "Quevedo" }
   }
 };
 

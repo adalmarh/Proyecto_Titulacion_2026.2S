@@ -25,7 +25,6 @@ import PanelProductor from "./pages/PanelProductor";
 import PanelCertificador from "./pages/PanelCertificador";
 import Lotes from "./pages/Lotes";
 import Productores from "./pages/Productores";
-import Asociaciones from "./pages/Asociaciones";
 import Usuarios from "./pages/Usuarios";
 import Trazabilidad from "./pages/Trazabilidad";
 import Certificaciones from "./pages/Certificaciones";
@@ -39,7 +38,7 @@ import VerificarCertificado from "./pages/VerificarCertificado";
 import AceptarPrivacidad from "./components/AceptarPrivacidad";
 
 
-const { ADMIN, ASOCIACION, PRODUCTOR, CERTIFICADOR } = ROLES;
+const { ADMIN, PRODUCTOR, CERTIFICADOR } = ROLES;
 
 
 // ==========================================
@@ -251,7 +250,7 @@ const App = () => {
         <Route
           path="/lotes"
           element={
-            <Privada roles={[ADMIN, ASOCIACION, PRODUCTOR]}>
+            <Privada roles={[ADMIN, PRODUCTOR]}>
               <Lotes />
             </Privada>
           }
@@ -262,19 +261,8 @@ const App = () => {
         <Route
           path="/productores"
           element={
-            <Privada roles={[ADMIN, ASOCIACION]}>
-              <Productores />
-            </Privada>
-          }
-        />
-
-
-        {/* ASOCIACIONES */}
-        <Route
-          path="/asociaciones"
-          element={
             <Privada roles={[ADMIN]}>
-              <Asociaciones />
+              <Productores />
             </Privada>
           }
         />
@@ -295,7 +283,7 @@ const App = () => {
         <Route
           path="/solicitudes"
           element={
-            <Privada roles={[ADMIN, ASOCIACION]}>
+            <Privada roles={[ADMIN]}>
               <Solicitudes />
             </Privada>
           }
@@ -328,7 +316,7 @@ const App = () => {
         <Route
           path="/qr"
           element={
-            <Privada roles={[ADMIN, ASOCIACION, PRODUCTOR]}>
+            <Privada roles={[ADMIN, PRODUCTOR]}>
               <CodigosQR />
             </Privada>
           }

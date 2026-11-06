@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import {
   LuInbox,
@@ -17,15 +16,14 @@ import {
 
 import api from "../services/api";
 import Modal from "../components/Modal";
-import { usePermisos, ROLES } from "../utils/permisos";
-import { formatearFecha, formatearFechaHora, nombreCompleto, idDe } from "../utils/formatos";
+import { AuthContext } from "../context/AuthContext";
+import { formatearFecha, formatearFechaHora, nombreCompleto } from "../utils/formatos";
 
 
 // ==========================================================
 // SOLICITUDES DE CUENTA
-// - Administrador: revisa todas y elige la asociación.
-// - Asociación: revisa las de los productores que dicen
-//   pertenecer a ella.
+// - Solo el administrador las revisa. Todas son de
+//   productores de la empresa.
 // Al aprobar, el backend crea la cuenta (y la ficha del
 // productor si no existía). Al rechazar, se exige el motivo,
 // que la persona verá al intentar iniciar sesión.
@@ -37,22 +35,15 @@ const NOMBRE_ESTADO = {
   rechazada: "Rechazada"
 };
 
-const NOMBRE_TIPO = {
-  productor: "Productor",
-  asociacion: "Asociación"
-};
-
 // Avisa al menú lateral para que actualice el contador
 const avisarCambio = () => window.dispatchEvent(new Event("solicitudes-cambio"));
 
 
 const Solicitudes = () => {
 
-  const permisos = usePermisos();
-  const esAdmin = permisos.rol === ROLES.ADMIN;
+  const { usuario } = useContext(AuthContext);
 
   const [solicitudes, setSolicitudes] = useState([]);
-  const [asociaciones, setAsociaciones] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
@@ -63,7 +54,6 @@ const Solicitudes = () => {
   // Revisión
   const [revisando, setRevisando] = useState(null);
   const [decision, setDecision] = useState("aprobar");
-  const [asociacionElegida, setAsociacionElegida] = useState("");
   const [motivo, setMotivo] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [errorModal, setErrorModal] = useState("");
@@ -83,12 +73,7 @@ const Solicitudes = () => {
 
   useEffect(() => {
     cargar();
-    if (esAdmin) {
-      api.get("/asociaciones")
-        .then((r) => setAsociaciones((r.data || []).filter((a) => a.activa !== false)))
-        .catch(() => setAsociaciones([]));
-    }
-  }, [cargar, esAdmin]);
+  }, [cargar]);
 
 
   const contar = (estado) => solicitudes.filter((s) => s.estado === estado).length;
@@ -109,7 +94,6 @@ const Solicitudes = () => {
   const abrirRevision = (solicitud) => {
     setRevisando(solicitud);
     setDecision("aprobar");
-    setAsociacionElegida(idDe(solicitud.asociacion));
     setMotivo("");
     setErrorModal("");
     setMensaje("");
@@ -121,11 +105,6 @@ const Solicitudes = () => {
 
     const aprobar = decision === "aprobar";
 
-    if (aprobar && esAdmin && !asociacionElegida) {
-      setErrorModal("Selecciona la asociación. Si es nueva, regístrala primero en Asociaciones.");
-      return;
-    }
-
     if (!aprobar && motivo.trim().length < 5) {
       setErrorModal("Escribe el motivo del rechazo; la persona lo verá al intentar entrar.");
       return;
@@ -135,7 +114,7 @@ const Solicitudes = () => {
       setEnviando(true);
 
       const r = aprobar
-        ? await api.patch(`/solicitudes/${revisando._id}/aprobar`, esAdmin ? { asociacion: asociacionElegida } : {})
+        ? await api.patch(`/solicitudes/${revisando._id}/aprobar`, {})
         : await api.patch(`/solicitudes/${revisando._id}/rechazar`, { motivo: motivo.trim() });
 
       setMensaje(
@@ -162,9 +141,6 @@ const Solicitudes = () => {
   const ubicacion = (s) =>
     [s.parroquia, s.canton, s.provincia].filter(Boolean).join(", ") || "—";
 
-  const nombreAsociacion = (s) =>
-    s.asociacion?.nombre || (s.nombreAsociacion ? `Nueva: ${s.nombreAsociacion}` : "—");
-
   return (
     <div className="gs-pagina">
 
@@ -175,9 +151,7 @@ const Solicitudes = () => {
             Solicitudes de cuenta
           </h1>
           <p>
-            {esAdmin
-              ? "Personas que pidieron acceso desde la pantalla de inicio de sesión."
-              : "Productores que pidieron acceso indicando que pertenecen a tu asociación."}
+            Productores que pidieron acceso desde la pantalla de inicio de sesión.
           </p>
         </div>
 
@@ -269,8 +243,7 @@ const Solicitudes = () => {
                 <tr>
                   <th>Solicitante</th>
                   <th>Contacto</th>
-                  <th>Cuenta</th>
-                  <th>Asociación</th>
+                  <th>Ubicación de la finca</th>
                   <th>Enviada</th>
                   <th>Estado</th>
                   <th>Acciones</th>
@@ -288,10 +261,7 @@ const Solicitudes = () => {
                       <span className="gs-secundario">{s.telefono || "Sin celular"}</span>
                     </td>
                     <td>
-                      <span className={`gs-etiqueta gs-rol-${s.rolSolicitado}`}>{NOMBRE_TIPO[s.rolSolicitado]}</span>
-                    </td>
-                    <td>
-                      {nombreAsociacion(s)}
+                      {s.parroquia || "—"}
                       {(s.canton || s.provincia) && (
                         <span className="gs-secundario">{[s.canton, s.provincia].filter(Boolean).join(", ")}</span>
                       )}
@@ -330,7 +300,7 @@ const Solicitudes = () => {
       {revisando && (
         <Modal
           titulo="Revisar solicitud de cuenta"
-          subtitulo={`${revisando.nombre} ${revisando.apellido} · ${NOMBRE_TIPO[revisando.rolSolicitado]}`}
+          subtitulo={`${revisando.nombre} ${revisando.apellido} · Productor`}
           onCerrar={() => setRevisando(null)}
           bloqueado={enviando}
           ancho
@@ -354,12 +324,8 @@ const Solicitudes = () => {
                 </dd>
                 <dt>Ubicación</dt>
                 <dd>{ubicacion(revisando)}</dd>
-                <dt>{revisando.rolSolicitado === "productor" ? "Cómo llegar" : "Sede"}</dt>
+                <dt>Cómo llegar</dt>
                 <dd>{revisando.direccion || "—"}</dd>
-                <dt>Cuenta</dt>
-                <dd>{NOMBRE_TIPO[revisando.rolSolicitado]}</dd>
-                <dt>Asociación</dt>
-                <dd>{nombreAsociacion(revisando)}</dd>
                 <dt>Enviada</dt>
                 <dd>{formatearFechaHora(revisando.createdAt)}</dd>
                 <dt>Privacidad</dt>
@@ -383,7 +349,7 @@ const Solicitudes = () => {
                   <span>
                     {revisando.productorExistente.tieneCuenta
                       ? "Esta cédula ya tiene una cuenta: conviene rechazar la solicitud."
-                      : `Ya existe la ficha del productor ${nombreCompleto(revisando.productorExistente)} (${revisando.productorExistente.asociacion?.nombre || "sin asociación"}). Al aprobar, la cuenta se vinculará a esa ficha y a sus lotes.`}
+                      : `Ya existe la ficha del productor ${nombreCompleto(revisando.productorExistente)}. Al aprobar, la cuenta se vinculará a esa ficha y a sus lotes.`}
                   </span>
                 </div>
               )}
@@ -413,33 +379,11 @@ const Solicitudes = () => {
               </div>
 
               {decision === "aprobar" ? (
-                esAdmin ? (
-                  <div className="gs-campo">
-                    <label htmlFor="r-asociacion">Asociación de la cuenta *</label>
-                    <select
-                      id="r-asociacion"
-                      value={asociacionElegida}
-                      onChange={(e) => setAsociacionElegida(e.target.value)}
-                    >
-                      <option value="">Seleccione la asociación</option>
-                      {asociaciones.map((a) => (
-                        <option key={a._id} value={a._id}>{a.nombre}</option>
-                      ))}
-                    </select>
-                    {revisando.nombreAsociacion && !revisando.asociacion && (
-                      <span className="gs-ayuda">
-                        Pidió una asociación nueva: «{revisando.nombreAsociacion}». Regístrala en{" "}
-                        <Link to="/asociaciones" className="gs-enlace">Asociaciones</Link> y luego vuelve aquí.
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <p className="gs-ayuda">
-                    Se creará la cuenta de productor en tu asociación, con su celular y la
-                    dirección de la finca en su ficha. Aprueba solo si reconoces a la persona
-                    como socia; si tienes dudas, llámala o visita la finca antes.
-                  </p>
-                )
+                <p className="gs-ayuda">
+                  Se creará la cuenta de productor de {usuario?.empresa?.nombre || "la empresa"}, con
+                  su celular y la dirección de la finca en su ficha. Si tienes dudas sobre la
+                  persona, llámala o visita la finca antes de aprobar.
+                </p>
               ) : (
                 <div className="gs-campo">
                   <label htmlFor="r-motivo">Motivo del rechazo *</label>

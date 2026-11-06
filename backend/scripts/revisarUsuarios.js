@@ -3,8 +3,7 @@
 // ----------------------------------------------------------
 // Con el control de acceso por rol, cada usuario necesita
 // su vínculo para ver datos:
-//   - rol "asociacion": el campo asociacion.
-//   - rol "productor":  un Productor con su campo usuario.
+//   - rol "productor": un Productor con su campo usuario.
 // Este script SOLO LEE la base de datos y lista las cuentas
 // a las que les falta el vínculo. No modifica nada.
 //
@@ -25,7 +24,7 @@ const revisarUsuarios = async () => {
     await mongoose.connect(process.env.MONGO_URI);
 
     const usuarios = await Usuario.find()
-      .select("nombre apellido email rol asociacion activo")
+      .select("nombre apellido email rol activo")
       .sort({ rol: 1 });
 
     const productores = await Productor.find({
@@ -42,10 +41,6 @@ const revisarUsuarios = async () => {
 
     usuarios.forEach((u) => {
       let vinculo = "no necesita";
-
-      if (u.rol === "asociacion") {
-        vinculo = u.asociacion ? "asociación vinculada" : "FALTA ASOCIACIÓN";
-      }
 
       if (u.rol === "productor") {
         const p = conProductor.get(String(u._id));

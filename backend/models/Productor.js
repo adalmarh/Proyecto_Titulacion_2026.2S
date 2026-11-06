@@ -35,10 +35,14 @@ direccion: {
   type: String
 },
 
-asociacion: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "Asociacion",
-  required: true
+// Ubicación de la finca (la misma forma que en el lote).
+// Al registrar un lote nuevo se copia automáticamente.
+ubicacion: {
+  provincia: { type: String, trim: true, default: "" },
+  canton: { type: String, trim: true, default: "" },
+  parroquia: { type: String, trim: true, default: "" },
+  // Referencia para llegar a la finca
+  descripcion: { type: String, trim: true, default: "" }
 },
 
 usuario: {

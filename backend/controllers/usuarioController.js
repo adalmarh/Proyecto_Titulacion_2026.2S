@@ -2,7 +2,6 @@ const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
 
 const Usuario = require("../models/Usuario");
-const Asociacion = require("../models/Asociacion");
 const Productor = require("../models/Productor");
 
 
@@ -11,14 +10,12 @@ const Productor = require("../models/Productor");
 // ------------------------------------------
 // El administrador crea las cuentas y las
 // vincula según su rol:
-//  - asociacion: a una asociación.
 //  - productor:  a un productor registrado.
 //  - certificador y administrador: sin vínculo.
 // ==========================================
 
 const ROLES_VALIDOS = [
   "administrador",
-  "asociacion",
   "productor",
   "certificador"
 ];
@@ -61,7 +58,6 @@ const formatearUsuario = (usuario, productor) => ({
   email: usuario.email,
   rol: usuario.rol,
   activo: usuario.activo,
-  asociacion: usuario.asociacion || null,
   productor: productor
     ? {
       _id: productor._id,
@@ -77,38 +73,15 @@ const formatearUsuario = (usuario, productor) => ({
 
 // ==========================================
 // VALIDAR VÍNCULOS SEGÚN EL ROL
-// Devuelve { asociacion, productor } listos
+// Devuelve { productor } listo
 // para guardar.
 // ==========================================
 
 const validarVinculos = async ({
   rol,
-  asociacion,
   productor,
   usuarioId
 }) => {
-
-  if (rol === "asociacion") {
-    if (!asociacion || !idValido(asociacion)) {
-      throw new ErrorValidacion(
-        "Debe seleccionar la asociación del usuario"
-      );
-    }
-
-    const existe = await Asociacion.findOne({
-      _id: asociacion,
-      activa: true
-    });
-
-    if (!existe) {
-      throw new ErrorValidacion(
-        "La asociación no existe o está desactivada",
-        404
-      );
-    }
-
-    return { asociacion: existe._id, productor: null };
-  }
 
   if (rol === "productor") {
     if (!productor || !idValido(productor)) {
@@ -139,10 +112,10 @@ const validarVinculos = async ({
       );
     }
 
-    return { asociacion: null, productor: existe };
+    return { productor: existe };
   }
 
-  return { asociacion: null, productor: null };
+  return { productor: null };
 };
 
 
@@ -174,7 +147,6 @@ const obtenerUsuarios = async (req, res) => {
   try {
     const usuarios = await Usuario.find()
       .select("-password")
-      .populate("asociacion", "nombre ruc")
       .sort({ createdAt: -1 });
 
     const productores = await Productor.find({
@@ -210,7 +182,6 @@ const crearUsuario = async (req, res) => {
       email,
       password,
       rol,
-      asociacion,
       productor
     } = req.body || {};
 
@@ -238,7 +209,6 @@ const crearUsuario = async (req, res) => {
 
     const vinculos = await validarVinculos({
       rol,
-      asociacion,
       productor,
       usuarioId: null
     });
@@ -253,13 +223,10 @@ const crearUsuario = async (req, res) => {
       apellido,
       email: correo,
       password: passwordCifrada,
-      rol,
-      asociacion: vinculos.asociacion
+      rol
     });
 
     await vincularProductor(usuario._id, vinculos.productor);
-
-    await usuario.populate("asociacion", "nombre ruc");
 
     return res.status(201).json({
       mensaje: "Usuario creado correctamente",
@@ -295,7 +262,6 @@ const actualizarUsuario = async (req, res) => {
       email,
       password,
       rol,
-      asociacion,
       productor
     } = req.body || {};
 
@@ -355,7 +321,6 @@ const actualizarUsuario = async (req, res) => {
 
     const vinculos = await validarVinculos({
       rol: nuevoRol,
-      asociacion: asociacion || usuario.asociacion,
       productor: productor || (productorActual && productorActual._id),
       usuarioId: usuario._id
     });
@@ -364,13 +329,10 @@ const actualizarUsuario = async (req, res) => {
     if (apellido) usuario.apellido = apellido;
 
     usuario.rol = nuevoRol;
-    usuario.asociacion = vinculos.asociacion;
 
     await usuario.save();
 
     await vincularProductor(usuario._id, vinculos.productor);
-
-    await usuario.populate("asociacion", "nombre ruc");
 
     return res.status(200).json({
       mensaje: "Usuario actualizado correctamente",
@@ -414,8 +376,7 @@ const cambiarEstadoUsuario = async (req, res) => {
       { activo },
       { new: true }
     )
-      .select("-password")
-      .populate("asociacion", "nombre ruc");
+      .select("-password");
 
     if (!usuario) {
       throw new ErrorValidacion("Usuario no encontrado", 404);

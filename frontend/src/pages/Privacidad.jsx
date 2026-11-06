@@ -68,9 +68,8 @@ const Privacidad = () => {
 
         <p className="pv-resumen">
           RutaCacao registra la trazabilidad de lotes de cacao fino de aroma.
-          Usamos tus datos para crear tu cuenta, comprobar que eres productor o
-          representante de una asociación y mostrar al consumidor el origen de
-          cada lote. Tu cédula, celular, correo y dirección nunca se publican.
+          Usamos tus datos para crear tu cuenta, comprobar que eres productor de
+          la empresa y mostrar al consumidor el origen de cada lote. Tu cédula, celular, correo y dirección nunca se publican.
         </p>
 
         {!CORREO_DATOS && (
@@ -122,8 +121,8 @@ const Privacidad = () => {
           </table>
           <p>
             Los datos los entregas tú en el formulario de solicitud de cuenta.
-            Si eres productor y tu asociación ya te había registrado, parte de
-            ellos provienen de tu asociación.
+            Si la empresa ya te había registrado como productor, parte de ellos
+            provienen de ese registro.
           </p>
         </section>
 
@@ -131,7 +130,7 @@ const Privacidad = () => {
           <h2>3. Para qué los usamos</h2>
           <ul>
             <li>Crear y administrar tu cuenta e identificarte al iniciar sesión.</li>
-            <li>Comprobar, antes de aprobar tu cuenta, que perteneces a la asociación que indicaste; para eso tu asociación o el administrador pueden llamarte o visitar tu finca.</li>
+            <li>Comprobar, antes de aprobar tu cuenta, que eres productor de cacao; para eso el administrador de la empresa puede llamarte o visitar tu finca.</li>
             <li>Registrar el historial de cada lote y gestionar sus certificaciones.</li>
             <li>Mostrar al consumidor, al escanear el código QR, el origen y el recorrido del lote.</li>
           </ul>
@@ -166,18 +165,14 @@ const Privacidad = () => {
                 <td>Todos los datos, para gestionar cuentas y certificaciones</td>
               </tr>
               <tr>
-                <td>Tu asociación</td>
-                <td>Los datos de sus productores y de sus lotes</td>
-              </tr>
-              <tr>
                 <td>Certificador asignado</td>
                 <td>Los datos del lote que revisa y su historial</td>
               </tr>
               <tr>
                 <td>Cualquier persona que escanee el QR</td>
                 <td>
-                  Nombre y apellido del productor; nombre, provincia y cantón de la
-                  asociación; ubicación del lote; actividades registradas (con el
+                  Nombre y apellido del productor; nombre de la empresa; ubicación
+                  del lote; actividades registradas (con el
                   nombre y rol de quien las registró) y certificaciones vigentes.
                   <strong> Nunca</strong> la cédula, el celular, el correo ni tu dirección.
                 </td>

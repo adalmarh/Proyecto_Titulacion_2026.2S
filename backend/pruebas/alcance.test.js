@@ -20,39 +20,37 @@ const Lote = req_("models/Lote");
 const Productor = req_("models/Productor");
 const Certificacion = req_("models/Certificacion");
 const EventoTrazabilidad = req_("models/EventoTrazabilidad");
-const Asociacion = req_("models/Asociacion");
 
 const oid = () => new mongoose.Types.ObjectId();
 
 // ---------------- datos de ejemplo ----------------
-const A1 = oid(), A2 = oid();
+// Todos los productores pertenecen a la misma empresa.
 const U = {
   admin: { _id: oid(), rol: "administrador" },
-  asoc1: { _id: oid(), rol: "asociacion", asociacion: A1 },
-  asocSin: { _id: oid(), rol: "asociacion", asociacion: null },
   prod1: { _id: oid(), rol: "productor" },
   prodSin: { _id: oid(), rol: "productor" },
   cert1: { _id: oid(), rol: "certificador" },
-  cert2: { _id: oid(), rol: "certificador" }
+  cert2: { _id: oid(), rol: "certificador" },
+  // Cuenta que quedó con el rol eliminado: no debe ver nada
+  viejaAsoc: { _id: oid(), rol: "asociacion" }
 };
-const P1 = { _id: oid(), asociacion: A1, usuario: U.prod1._id, activo: true };
-const P2 = { _id: oid(), asociacion: A1, usuario: null, activo: true };
-const P3 = { _id: oid(), asociacion: A2, usuario: null, activo: true };
-const L1 = { _id: oid(), productor: P1._id, asociacion: A1 };
-const L2 = { _id: oid(), productor: P2._id, asociacion: A1 };
-const L3 = { _id: oid(), productor: P3._id, asociacion: A2 };
+const P1 = { _id: oid(), usuario: U.prod1._id, activo: true };
+const P2 = { _id: oid(), usuario: null, activo: true };
+const P3 = { _id: oid(), usuario: null, activo: true };
+const L1 = { _id: oid(), productor: P1._id };
+const L2 = { _id: oid(), productor: P2._id };
+const L3 = { _id: oid(), productor: P3._id };
 const C1 = { _id: oid(), lote: L1._id, certificador: U.cert1._id, activo: true };
 const C2 = { _id: oid(), lote: L3._id, certificador: null, activo: true };
 const E1 = { _id: oid(), lote: L1._id, responsable: U.prod1._id };
-const E2 = { _id: oid(), lote: L1._id, responsable: U.asoc1._id };
+const E2 = { _id: oid(), lote: L1._id, responsable: U.admin._id };
 const E3 = { _id: oid(), lote: L3._id, responsable: U.admin._id };
 
 const DB = {
   Lote: [L1, L2, L3],
   Productor: [P1, P2, P3],
   Certificacion: [C1, C2],
-  EventoTrazabilidad: [E1, E2, E3],
-  Asociacion: [{ _id: A1, activa: true }, { _id: A2, activa: true }]
+  EventoTrazabilidad: [E1, E2, E3]
 };
 
 // ------------- mini evaluador de filtros Mongo -------------
@@ -88,7 +86,6 @@ instalar(Lote, DB.Lote);
 instalar(Productor, DB.Productor);
 instalar(Certificacion, DB.Certificacion);
 instalar(EventoTrazabilidad, DB.EventoTrazabilidad);
-instalar(Asociacion, DB.Asociacion);
 
 const alcance = req_("middleware/alcanceMiddleware");
 
@@ -112,40 +109,41 @@ const ejecutar = (mw, usuario, { params = {}, body } = {}) => new Promise((resol
 test("lotes visibles por rol", async () => {
   const f = alcance.filtroLotes;
   assert.deepEqual(await ver(f, U.admin, DB.Lote), ids([L1, L2, L3]));
-  assert.deepEqual(await ver(f, U.asoc1, DB.Lote), ids([L1, L2]));
-  assert.deepEqual(await ver(f, U.asocSin, DB.Lote), []);
   assert.deepEqual(await ver(f, U.prod1, DB.Lote), ids([L1]));
   assert.deepEqual(await ver(f, U.prodSin, DB.Lote), []);
   assert.deepEqual(await ver(f, U.cert1, DB.Lote), ids([L1]));
   assert.deepEqual(await ver(f, U.cert2, DB.Lote), []);
 });
 
-test("productores y asociaciones visibles por rol", async () => {
-  assert.deepEqual(await ver(alcance.filtroProductores, U.asoc1, DB.Productor), ids([P1, P2]));
+test("una cuenta con el rol asociación eliminado no ve nada", async () => {
+  assert.deepEqual(await ver(alcance.filtroLotes, U.viejaAsoc, DB.Lote), []);
+  assert.deepEqual(await ver(alcance.filtroProductores, U.viejaAsoc, DB.Productor), []);
+  assert.deepEqual(await ver(alcance.filtroCertificaciones, U.viejaAsoc, DB.Certificacion), []);
+  const { code } = await ejecutar(alcance.accesoLote((r) => r.params.id, "gestionar"), U.viejaAsoc, { params: { id: String(L1._id) } });
+  assert.equal(code, 403);
+});
+
+test("productores visibles por rol", async () => {
+  assert.deepEqual(await ver(alcance.filtroProductores, U.admin, DB.Productor), ids([P1, P2, P3]));
   assert.deepEqual(await ver(alcance.filtroProductores, U.prod1, DB.Productor), ids([P1]));
   assert.deepEqual(await ver(alcance.filtroProductores, U.cert1, DB.Productor), ids([P1]));
-  assert.deepEqual(await ver(alcance.filtroAsociaciones, U.asoc1, DB.Asociacion), [String(A1)]);
-  assert.deepEqual(await ver(alcance.filtroAsociaciones, U.prod1, DB.Asociacion), [String(A1)]);
-  assert.deepEqual(await ver(alcance.filtroAsociaciones, U.cert2, DB.Asociacion), []);
-  assert.deepEqual(await ver(alcance.filtroAsociaciones, U.admin, DB.Asociacion), [String(A1), String(A2)].sort());
+  assert.deepEqual(await ver(alcance.filtroProductores, U.cert2, DB.Productor), []);
 });
 
 test("eventos y certificaciones visibles por rol", async () => {
   assert.deepEqual(await ver(alcance.filtroEventos, U.prod1, DB.EventoTrazabilidad), ids([E1, E2]));
-  assert.deepEqual(await ver(alcance.filtroEventos, U.asoc1, DB.EventoTrazabilidad), ids([E1, E2]));
   assert.deepEqual(await ver(alcance.filtroEventos, U.admin, DB.EventoTrazabilidad), ids([E1, E2, E3]));
   assert.deepEqual(await ver(alcance.filtroCertificaciones, U.cert1, DB.Certificacion), ids([C1]));
   assert.deepEqual(await ver(alcance.filtroCertificaciones, U.cert2, DB.Certificacion), []);
-  assert.deepEqual(await ver(alcance.filtroCertificaciones, U.asoc1, DB.Certificacion), ids([C1]));
+  assert.deepEqual(await ver(alcance.filtroCertificaciones, U.prod1, DB.Certificacion), ids([C1]));
   assert.deepEqual(await ver(alcance.filtroCertificaciones, U.admin, DB.Certificacion), ids([C1, C2]));
 });
 
 test("acceso a un lote: ver y gestionar", async () => {
-  const verL = (id) => alcance.accesoLote((r) => r.params.id, "ver");
+  const verL = () => alcance.accesoLote((r) => r.params.id, "ver");
   const gesL = () => alcance.accesoLote((r) => r.params.id, "gestionar");
   const casos = [
-    ["admin", L3, "gestionar", 200], ["asoc1", L1, "gestionar", 200], ["asoc1", L3, "gestionar", 403],
-    ["asoc1", L3, "ver", 403], ["prod1", L1, "gestionar", 200], ["prod1", L2, "gestionar", 403],
+    ["admin", L3, "gestionar", 200], ["prod1", L1, "gestionar", 200], ["prod1", L2, "gestionar", 403],
     ["prod1", L2, "ver", 403], ["cert1", L1, "ver", 200], ["cert1", L1, "gestionar", 403],
     ["cert1", L2, "ver", 403], ["prodSin", L1, "ver", 403]
   ];
@@ -163,8 +161,7 @@ test("acceso a eventos: el productor solo edita los suyos", async () => {
   const g = alcance.accesoEvento("gestionar");
   assert.equal((await ejecutar(g, U.prod1, { params: { id: String(E1._id) } })).code, 200);
   assert.equal((await ejecutar(g, U.prod1, { params: { id: String(E2._id) } })).code, 403);
-  assert.equal((await ejecutar(g, U.asoc1, { params: { id: String(E2._id) } })).code, 200);
-  assert.equal((await ejecutar(g, U.asoc1, { params: { id: String(E3._id) } })).code, 403);
+  assert.equal((await ejecutar(g, U.admin, { params: { id: String(E2._id) } })).code, 200);
   assert.equal((await ejecutar(alcance.accesoEvento("ver"), U.cert1, { params: { id: String(E1._id) } })).code, 200);
   assert.equal((await ejecutar(g, U.cert1, { params: { id: String(E1._id) } })).code, 403);
 });
@@ -173,27 +170,18 @@ test("acceso a certificaciones", async () => {
   const c = alcance.accesoCertificacion();
   assert.equal((await ejecutar(c, U.cert1, { params: { id: String(C1._id) } })).code, 200);
   assert.equal((await ejecutar(c, U.cert2, { params: { id: String(C1._id) } })).code, 403);
-  assert.equal((await ejecutar(c, U.asoc1, { params: { id: String(C2._id) } })).code, 403);
   assert.equal((await ejecutar(c, U.prod1, { params: { id: String(C1._id) } })).code, 200);
+  assert.equal((await ejecutar(c, U.prod1, { params: { id: String(C2._id) } })).code, 403);
   assert.equal((await ejecutar(c, U.admin, { params: { id: String(C2._id) } })).code, 200);
   assert.equal((await ejecutar(c, U.admin, { params: { id: String(oid()) } })).code, 404);
 });
 
-test("gestión de productores por la asociación", async () => {
+test("solo el administrador gestiona productores", async () => {
   const p = alcance.accesoProductor();
-  assert.equal((await ejecutar(p, U.asoc1, { params: { id: String(P2._id) } })).code, 200);
-  assert.equal((await ejecutar(p, U.asoc1, { params: { id: String(P3._id) } })).code, 403);
   assert.equal((await ejecutar(p, U.admin, { params: { id: String(P3._id) } })).code, 200);
-});
-
-test("la asociación no puede trabajar con otra asociación", async () => {
-  const r = await ejecutar(alcance.forzarAsociacionPropia, U.asoc1, { body: { asociacion: String(A2) } });
-  assert.equal(r.code, 200);
-  assert.equal(r.body.asociacion, String(A1));
-  assert.equal((await ejecutar(alcance.forzarAsociacionPropia, U.asocSin, { body: {} })).code, 403);
-  const admin = await ejecutar(alcance.forzarAsociacionPropia, U.admin, { body: { asociacion: String(A2) } });
-  assert.equal(admin.body.asociacion, String(A2));
-  const s = await ejecutar(alcance.soloAdminPuedeCambiar("asociacion"), U.asoc1, { body: { asociacion: "x", nombre: "n" } });
+  assert.equal((await ejecutar(p, U.prod1, { params: { id: String(P1._id) } })).code, 403);
+  assert.equal((await ejecutar(p, U.cert1, { params: { id: String(P1._id) } })).code, 403);
+  const s = await ejecutar(alcance.soloAdminPuedeCambiar("usuario"), U.prod1, { body: { usuario: "x", nombre: "n" } });
   assert.deepEqual(s.body, { nombre: "n" });
 });
 

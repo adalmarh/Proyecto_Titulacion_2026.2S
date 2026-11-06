@@ -423,70 +423,36 @@ button {
   counter-reset: paso;
 }
 
-.registro-tipos {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 18px;
-  border: none;
-}
-
-.registro-tipos legend {
-  margin-bottom: 6px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.registro-tipo {
-  position: relative;
+/* Cuenta de productor de la empresa */
+.registro-empresa {
   display: flex;
   align-items: flex-start;
   gap: 10px;
+  margin-bottom: 18px;
   padding: 12px 14px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--verde);
   border-radius: 10px;
-  cursor: pointer;
+  background: #f0fff4;
 }
 
-.registro-tipo input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.registro-tipo > svg {
+.registro-empresa > svg {
   width: 22px;
   height: 22px;
   flex-shrink: 0;
-  color: #94a3b8;
+  color: var(--verde);
 }
 
-.registro-tipo strong {
+.registro-empresa strong {
   display: block;
   font-size: 15px;
 }
 
-.registro-tipo small {
+.registro-empresa small {
   display: block;
   margin-top: 2px;
   font-size: 12.5px;
   line-height: 1.35;
   color: var(--gris);
-}
-
-.registro-tipo-activo {
-  border-color: var(--verde);
-  background: #f0fff4;
-  box-shadow: 0 0 0 1px var(--verde);
-}
-
-.registro-tipo-activo > svg {
-  color: var(--verde);
-}
-
-.registro-tipo:has(input:focus-visible) {
-  outline: 3px solid rgba(47, 133, 90, 0.35);
-  outline-offset: 2px;
 }
 
 .registro-campos {

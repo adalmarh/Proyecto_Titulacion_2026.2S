@@ -40,7 +40,7 @@ import {
 
 // ==========================================================
 // CERTIFICACIONES
-// - Administrador, asociación y productor solicitan.
+// - Administrador y productor solicitan.
 // - El administrador asigna el certificador.
 // - El administrador y el certificador emiten el dictamen.
 // - Las aprobadas tienen certificado PDF.

@@ -1,6 +1,5 @@
 const Lote = require("../models/Lote");
 const Productor = require("../models/Productor");
-const Asociacion = require("../models/Asociacion");
 const EventoTrazabilidad = require(
   "../models/EventoTrazabilidad"
 );
@@ -13,7 +12,6 @@ const {
   ROLES,
   filtroLotes,
   filtroProductores,
-  filtroAsociaciones,
   filtroEventos,
   filtroCertificaciones
 } = require("../middleware/alcanceMiddleware");
@@ -45,9 +43,6 @@ const obtenerEstadisticasDashboard =
 
       const fProductores =
         await filtroProductores(req);
-
-      const fAsociaciones =
-        await filtroAsociaciones(req);
 
       const fEventos =
         await filtroEventos(req);
@@ -83,16 +78,6 @@ const obtenerEstadisticasDashboard =
       const productoresActivos =
         await Productor.countDocuments(
           y(fProductores, { activo: true })
-        );
-
-      const totalAsociaciones =
-        await Asociacion.countDocuments(fAsociaciones);
-
-      // En el modelo Asociacion el campo
-      // se llama "activa" (no "activo")
-      const asociacionesActivas =
-        await Asociacion.countDocuments(
-          y(fAsociaciones, { activa: true })
         );
 
       const totalEventos =
@@ -188,10 +173,6 @@ const obtenerEstadisticasDashboard =
             "productor",
             "nombre apellido"
           )
-          .populate(
-            "asociacion",
-            "nombre"
-          )
           .sort({ createdAt: -1 })
           .limit(5);
 
@@ -226,8 +207,6 @@ const obtenerEstadisticasDashboard =
           lotesActivos,
           totalProductores,
           productoresActivos,
-          totalAsociaciones,
-          asociacionesActivas,
           totalEventos,
           certificacionesAprobadas,
           totalCodigosQR,

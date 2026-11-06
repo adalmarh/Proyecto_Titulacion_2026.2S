@@ -1,7 +1,7 @@
 // ==========================================
 // PERMITIR ROLES
 // Debe usarse siempre después de protegerRuta.
-// Ejemplo: permitirRoles("administrador", "asociacion")
+// Ejemplo: permitirRoles("administrador", "productor")
 // ==========================================
 
 const permitirRoles = (...rolesPermitidos) => {

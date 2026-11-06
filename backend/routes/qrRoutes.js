@@ -34,7 +34,6 @@ router.post(
   protegerRuta,
   permitirRoles(
     "administrador",
-    "asociacion",
     "productor"
   ),
   accesoLote(loteDeLaUrl, "gestionar"),
@@ -62,8 +61,7 @@ router.patch(
   "/lote/:loteId/regenerar",
   protegerRuta,
   permitirRoles(
-    "administrador",
-    "asociacion"
+    "administrador"
   ),
   accesoLote(loteDeLaUrl, "gestionar"),
   regenerarCodigoQR
@@ -78,8 +76,7 @@ router.patch(
   "/lote/:loteId/desactivar",
   protegerRuta,
   permitirRoles(
-    "administrador",
-    "asociacion"
+    "administrador"
   ),
   accesoLote(loteDeLaUrl, "gestionar"),
   desactivarCodigoQR

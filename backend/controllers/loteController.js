@@ -4,9 +4,6 @@ const Lote =
 const Productor =
   require("../models/Productor");
 
-const Asociacion =
-  require("../models/Asociacion");
-
 const {
   filtroLotes
 } = require("../middleware/alcanceMiddleware");
@@ -35,7 +32,6 @@ const crearLote = async (
       producto,
       descripcion,
       productor,
-      asociacion,
       ubicacion,
       fechaSiembra,
       fechaEstimadaCosecha,
@@ -50,13 +46,12 @@ const crearLote = async (
 
     if (
       !productor ||
-      !asociacion ||
       cantidad === undefined
     ) {
 
       return res.status(400).json({
         mensaje:
-          "Productor, asociación y cantidad son obligatorios"
+          "Productor y cantidad son obligatorios"
       });
 
     }
@@ -100,44 +95,6 @@ const crearLote = async (
 
 
     // ========================================
-    // VERIFICAR ASOCIACIÓN
-    // ========================================
-
-    const asociacionExiste =
-      await Asociacion.findById(
-        asociacion
-      );
-
-
-    if (!asociacionExiste) {
-
-      return res.status(404).json({
-        mensaje:
-          "La asociación no existe"
-      });
-
-    }
-
-
-    // ========================================
-    // VERIFICAR RELACIÓN
-    // PRODUCTOR - ASOCIACIÓN
-    // ========================================
-
-    if (
-      productorExiste.asociacion.toString() !==
-      asociacion
-    ) {
-
-      return res.status(400).json({
-        mensaje:
-          "El productor no pertenece a la asociación seleccionada"
-      });
-
-    }
-
-
-    // ========================================
     // CREAR LOTE
     // ========================================
 
@@ -150,8 +107,6 @@ const crearLote = async (
         descripcion,
 
         productor,
-
-        asociacion,
 
         ubicacion,
 
@@ -178,10 +133,6 @@ const crearLote = async (
         .populate(
           "productor",
           "nombre apellido cedula"
-        )
-        .populate(
-          "asociacion",
-          "nombre ruc"
         );
 
 
@@ -244,10 +195,6 @@ const obtenerLotes = async (
           "productor",
           "nombre apellido cedula"
         )
-        .populate(
-          "asociacion",
-          "nombre ruc"
-        )
         .sort({
           createdAt: -1
         });
@@ -298,10 +245,6 @@ const obtenerLote = async (
         .populate(
           "productor",
           "nombre apellido cedula telefono email"
-        )
-        .populate(
-          "asociacion",
-          "nombre ruc provincia canton"
         );
 
 
@@ -384,10 +327,6 @@ const obtenerLotesPorProductor =
               await filtroLotes(req)
             ]
           })
-          .populate(
-            "asociacion",
-            "nombre ruc"
-          )
           .sort({
             createdAt: -1
           });
@@ -432,13 +371,12 @@ const actualizarLote = async (
 
     // ========================================
     // NO PERMITIR CAMBIAR:
-    // código, productor, asociación
+    // código, productor ni producto
     // ========================================
 
     const {
       codigo,
       productor,
-      asociacion,
       producto,
       ...datosActualizacion
     } = req.body;
@@ -491,10 +429,6 @@ const actualizarLote = async (
         .populate(
           "productor",
           "nombre apellido cedula"
-        )
-        .populate(
-          "asociacion",
-          "nombre ruc"
         );
 
 

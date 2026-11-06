@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { estadoSolicitudParaLogin } = require("./solicitudController");
 const { VERSION_AVISO_PRIVACIDAD } = require("../utils/privacidad");
+const { datosEmpresa } = require("../utils/empresa");
 const { normalizarCelular, celularValido } = require("../utils/validaciones");
 
 const LONGITUD_MINIMA_PASSWORD = 6;
@@ -43,7 +44,8 @@ const datosSesion = async (usuario) => {
     email: usuario.email,
     rol: usuario.rol,
     telefono: usuario.telefono || "",
-    asociacion: null,
+    // Empresa a la que pertenecen todos los productores
+    empresa: datosEmpresa(),
     productor: null,
     // Si es false, el frontend pide aceptar el aviso
     // de privacidad antes de dejar usar el sistema.
@@ -52,22 +54,11 @@ const datosSesion = async (usuario) => {
     consentimientoFecha: usuario.consentimiento?.fecha || null
   };
 
-  if (usuario.rol === "asociacion" && usuario.asociacion) {
-    await usuario.populate("asociacion", "nombre");
-    datos.asociacion = usuario.asociacion
-      ? {
-        _id: usuario.asociacion._id,
-        nombre: usuario.asociacion.nombre
-      }
-      : null;
-  }
-
   if (usuario.rol === "productor") {
     const productor = await Productor.findOne({
       usuario: usuario._id
     })
-      .select("nombre apellido telefono asociacion")
-      .populate("asociacion", "nombre");
+      .select("nombre apellido telefono");
 
     if (productor) {
       datos.productor = {
@@ -78,13 +69,6 @@ const datosSesion = async (usuario) => {
 
       // El celular del productor vive en su ficha
       datos.telefono = productor.telefono || datos.telefono;
-
-      datos.asociacion = productor.asociacion
-        ? {
-          _id: productor.asociacion._id,
-          nombre: productor.asociacion.nombre
-        }
-        : null;
     }
   }
 

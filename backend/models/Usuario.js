@@ -39,26 +39,14 @@ const usuarioSchema = new mongoose.Schema(
       type: String,
       enum: [
         "administrador",
-        "asociacion",
         "productor",
         "certificador"
       ],
       default: "productor"
     },
 
-    // ========================================
-    // ASOCIACIÓN DEL USUARIO
-    // Obligatoria cuando el rol es "asociacion":
-    // limita lo que ve y gestiona a su asociación.
-    // (El usuario con rol "productor" se vincula
-    // mediante el campo Productor.usuario.)
-    // ========================================
-
-    asociacion: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Asociacion",
-      default: null
-    },
+    // El usuario con rol "productor" se vincula a su
+    // ficha mediante el campo Productor.usuario.
 
     activo: {
       type: Boolean,

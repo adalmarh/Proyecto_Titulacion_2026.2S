@@ -211,29 +211,18 @@ const ejecutarCasos = async () => {
   T.admin = await login("admin@pruebas.ec");
 
   // ---------- Datos base (creados por el administrador) ----------
-  const asociacion = (n, ruc) => ({
-    nombre: `Asociación de pruebas ${n}`,
-    ruc,
-    direccion: "Vía principal s/n",
-    provincia: "Guayas",
-    canton: "Milagro"
-  });
-
-  D.A1 = await crear("/asociaciones", T.admin, asociacion(1, "0990000000001"), "asociacion");
-  D.A2 = await crear("/asociaciones", T.admin, asociacion(2, "0990000000002"), "asociacion");
-
-  const productor = (nombre, cedula, asoc) => ({
+  // Todos los productores pertenecen a la misma empresa.
+  const productor = (nombre, cedula) => ({
     nombre,
     apellido: "Pruebas",
     cedula,
     telefono: "0990000000",
-    email: `${nombre.toLowerCase()}@finca.ec`,
-    asociacion: asoc._id
+    email: `${nombre.toLowerCase()}@finca.ec`
   });
 
-  D.P1 = await crear("/productores", T.admin, productor("Pedro", "0900000001", D.A1), "productor");
-  D.P2 = await crear("/productores", T.admin, productor("María", "0900000027", D.A1), "productor");
-  D.P3 = await crear("/productores", T.admin, productor("José", "0900000035", D.A2), "productor");
+  D.P1 = await crear("/productores", T.admin, productor("Pedro", "0900000001"), "productor");
+  D.P2 = await crear("/productores", T.admin, productor("María", "0900000027"), "productor");
+  D.P3 = await crear("/productores", T.admin, productor("José", "0900000035"), "productor");
 
   const usuario = (nombre, email, rol, extra = {}) => ({
     nombre, apellido: "Pruebas", email, password: CLAVE, rol, ...extra
@@ -262,15 +251,13 @@ const ejecutarCasos = async () => {
 
   grupo("2. Gestión de usuarios (solo administrador)");
 
-  await caso("U01", "El administrador crea las cuentas de los cuatro roles", "201 en cada una", async () => {
-    D.uAsoc = await crear("/usuarios", T.admin, usuario("Ana", "asociacion@pruebas.ec", "asociacion", { asociacion: D.A1._id }), "usuario");
+  await caso("U01", "El administrador crea las cuentas de productor y certificador", "201 en cada una", async () => {
     D.uProd = await crear("/usuarios", T.admin, usuario("Pedro", "productor@pruebas.ec", "productor", { productor: D.P1._id }), "usuario");
     D.uCert = await crear("/usuarios", T.admin, usuario("Carla", "certificador@pruebas.ec", "certificador"), "usuario");
     D.uCert2 = await crear("/usuarios", T.admin, usuario("Luis", "certificador2@pruebas.ec", "certificador"), "usuario");
-    return { ok: true, obtenido: "201 · 4 cuentas creadas" };
+    return { ok: true, obtenido: "201 · 3 cuentas creadas" };
   });
 
-  T.asoc = await login("asociacion@pruebas.ec");
   T.prod = await login("productor@pruebas.ec");
   T.cert = await login("certificador@pruebas.ec");
   T.cert2 = await login("certificador2@pruebas.ec");
@@ -287,27 +274,32 @@ const ejecutarCasos = async () => {
   await caso("U05 / R04", "Lista de certificadores sin sesión", "401", async () =>
     codigo(await http("GET", "/usuarios/certificadores"), 401));
 
-  await caso("U06", "El perfil de la asociación incluye su asociación", "200 con la asociación A1", async () => {
-    const r = await http("GET", "/auth/perfil", { token: T.asoc });
-    const asoc = r.datos?.asociacion?._id || r.datos?.usuario?.asociacion?._id;
-    return { ok: r.status === 200 && String(asoc) === String(D.A1._id), obtenido: `${r.status} · asociación ${asoc || "ninguna"}` };
+  await caso("U06", "El perfil del productor incluye la empresa", "200 · nombre de la empresa", async () => {
+    const r = await http("GET", "/auth/perfil", { token: T.prod });
+    const empresa = r.datos?.empresa?.nombre;
+    return { ok: r.status === 200 && Boolean(empresa) && !("asociacion" in (r.datos || {})), obtenido: `${r.status} · ${empresa || "sin empresa"}` };
   });
+
+  await caso("U07", "Ya no se puede crear una cuenta con el rol asociación", "400 · rol no válido", async () =>
+    codigo(await http("POST", "/usuarios", { token: T.admin, body: usuario("Ana", "asociacion@pruebas.ec", "asociacion") }), 400));
+
+  await caso("U08", "La ruta de asociaciones ya no existe", "404", async () =>
+    codigo(await http("GET", "/asociaciones", { token: T.admin }), 404));
 
 
   grupo("3. Lotes y alcance por rol");
 
-  const lote = (prod, asoc, cantidad) => ({
+  const lote = (prod, cantidad) => ({
     productor: prod._id,
-    asociacion: asoc._id,
     cantidad,
     unidad: "kg",
     descripcion: "Lote de prueba",
     ubicacion: { provincia: "Guayas", canton: "Milagro" }
   });
 
-  D.L1 = await crear("/lotes", T.admin, lote(D.P1, D.A1, 1200), "lote");
-  D.L2 = await crear("/lotes", T.admin, lote(D.P2, D.A1, 800), "lote");
-  D.L3 = await crear("/lotes", T.admin, lote(D.P3, D.A2, 500), "lote");
+  D.L1 = await crear("/lotes", T.admin, lote(D.P1, 1200), "lote");
+  D.L2 = await crear("/lotes", T.admin, lote(D.P2, 800), "lote");
+  D.L3 = await crear("/lotes", T.admin, lote(D.P3, 500), "lote");
 
   await caso("L01", "Los lotes reciben un código automático", "Códigos LOT-…", async () => {
     const c = [D.L1, D.L2, D.L3].map((l) => l.codigo);
@@ -315,10 +307,10 @@ const ejecutarCasos = async () => {
   });
 
   await caso("L02", "Registrar un lote de un producto distinto al cacao", "400 (alcance: solo cacao fino de aroma)", async () =>
-    codigo(await http("POST", "/lotes", { token: T.admin, body: { ...lote(D.P1, D.A1, 10), producto: "Café" } }), 400));
+    codigo(await http("POST", "/lotes", { token: T.admin, body: { ...lote(D.P1, 10), producto: "Café" } }), 400));
 
-  await caso("L03", "Registrar un lote con un productor de otra asociación", "400", async () =>
-    codigo(await http("POST", "/lotes", { token: T.admin, body: lote(D.P3, D.A1, 10) }), 400));
+  await caso("L03", "Registrar un lote sin productor", "400", async () =>
+    codigo(await http("POST", "/lotes", { token: T.admin, body: { cantidad: 10 } }), 400));
 
   await caso("L04 / R05", "El administrador ve todos los lotes", "200 · 3 lotes", async () => {
     const r = await http("GET", "/lotes", { token: T.admin });
@@ -326,10 +318,10 @@ const ejecutarCasos = async () => {
     return { ok: r.status === 200 && l.length === 3, obtenido: `${r.status} · ${l.length} lotes` };
   });
 
-  await caso("L05 / R06", "La asociación solo ve los lotes de su asociación", "200 · L1 y L2", async () => {
-    const r = await http("GET", "/lotes", { token: T.asoc });
-    const l = lista(r.datos, "lotes");
-    return { ok: r.status === 200 && iguales(ids(l), ids([D.L1, D.L2])), obtenido: `${r.status} · ${l.map((x) => x.codigo).join(", ")}` };
+  await caso("L05 / R06", "Los lotes ya no tienen asociación", "Ningún lote con el campo asociación", async () => {
+    const l = lista((await http("GET", "/lotes", { token: T.admin })).datos, "lotes");
+    const conAsociacion = l.filter((x) => "asociacion" in x).length;
+    return { ok: l.length === 3 && conAsociacion === 0, obtenido: `${l.length} lotes · ${conAsociacion} con asociación` };
   });
 
   await caso("L06 / R07", "El productor solo ve sus lotes", "200 · solo L1", async () => {
@@ -348,31 +340,27 @@ const ejecutarCasos = async () => {
     codigo(await http("GET", `/lotes/${D.L2._id}`, { token: T.prod }), 403));
 
   await caso("L09 / R12", "El productor intenta registrar un lote", "403", async () =>
-    codigo(await http("POST", "/lotes", { token: T.prod, body: lote(D.P1, D.A1, 10) }), 403));
+    codigo(await http("POST", "/lotes", { token: T.prod, body: lote(D.P1, 10) }), 403));
 
-  await caso("L10 / R13", "La asociación edita un lote de otra asociación", "403", async () =>
-    codigo(await http("PUT", `/lotes/${D.L3._id}`, { token: T.asoc, body: { cantidad: 1 } }), 403));
+  await caso("L10 / R13", "El productor intenta editar su lote", "403 · lo gestiona la empresa", async () =>
+    codigo(await http("PUT", `/lotes/${D.L1._id}`, { token: T.prod, body: { cantidad: 1 } }), 403));
 
-  await caso("L11", "La asociación cambia la etapa de su lote", "200 · etapa en_produccion", async () =>
-    codigo(await http("PATCH", `/lotes/${D.L1._id}/estado`, { token: T.asoc, body: { estado: "en_produccion" } }), 200));
+  await caso("L11", "El administrador cambia la etapa de un lote", "200 · etapa en_produccion", async () =>
+    codigo(await http("PATCH", `/lotes/${D.L1._id}/estado`, { token: T.admin, body: { estado: "en_produccion" } }), 200));
 
 
   grupo("4. Productores");
 
-  await caso("P01 / R14", "La asociación registra un productor indicando otra asociación", "201, pero queda en SU asociación", async () => {
-    const r = await http("POST", "/productores", { token: T.asoc, body: productor("Rosa", "0900000004", D.A2) });
-    const asoc = r.datos?.productor?.asociacion?._id || r.datos?.productor?.asociacion;
-    return { ok: r.status === 201 && String(asoc) === String(D.A1._id), obtenido: `${r.status} · asociación ${String(asoc) === String(D.A1._id) ? "A1 (la suya)" : asoc}` };
-  });
+  await caso("P01 / R14", "Un productor intenta registrar otro productor", "403", async () =>
+    codigo(await http("POST", "/productores", { token: T.prod, body: productor("Rosa", "0900000004") }), 403));
 
   await caso("P02", "Cédula de productor repetida", "400", async () =>
-    codigo(await http("POST", "/productores", { token: T.admin, body: productor("Otro", "0900000001", D.A1) }), 400));
+    codigo(await http("POST", "/productores", { token: T.admin, body: productor("Otro", "0900000001") }), 400));
 
-  await caso("P03", "La asociación solo ve los productores de su asociación", "200 · ninguno de A2", async () => {
-    const r = await http("GET", "/productores", { token: T.asoc });
+  await caso("P03", "El administrador ve a todos los productores de la empresa", "200 · 3 productores", async () => {
+    const r = await http("GET", "/productores", { token: T.admin });
     const l = lista(r.datos, "productores");
-    const ajenos = l.filter((p) => String(p.asociacion?._id || p.asociacion) !== String(D.A1._id));
-    return { ok: r.status === 200 && l.length > 0 && ajenos.length === 0, obtenido: `${r.status} · ${l.length} productores, ${ajenos.length} ajenos` };
+    return { ok: r.status === 200 && l.length === 3, obtenido: `${r.status} · ${l.length} productores` };
   });
 
 
@@ -391,11 +379,11 @@ const ejecutarCasos = async () => {
     codigo(await http("POST", "/trazabilidad", { token: T.cert, body: { lote: D.L1._id, tipo: "riego", descripcion: "x" } }), 403));
 
   await caso("T04", "Actividad sin descripción", "400", async () =>
-    codigo(await http("POST", "/trazabilidad", { token: T.asoc, body: { lote: D.L1._id, tipo: "riego" } }), 400));
+    codigo(await http("POST", "/trazabilidad", { token: T.admin, body: { lote: D.L1._id, tipo: "riego" } }), 400));
 
-  await caso("T05", "La asociación registra más actividades del lote", "201", async () => {
-    const r1 = await http("POST", "/trazabilidad", { token: T.asoc, body: { lote: D.L1._id, tipo: "cosecha", descripcion: "Cosecha de mazorcas maduras" } });
-    const r2 = await http("POST", "/trazabilidad", { token: T.asoc, body: { lote: D.L1._id, tipo: "otro", descripcion: "Registro duplicado por error" } });
+  await caso("T05", "El administrador registra más actividades del lote", "201", async () => {
+    const r1 = await http("POST", "/trazabilidad", { token: T.admin, body: { lote: D.L1._id, tipo: "cosecha", descripcion: "Cosecha de mazorcas maduras" } });
+    const r2 = await http("POST", "/trazabilidad", { token: T.admin, body: { lote: D.L1._id, tipo: "otro", descripcion: "Registro duplicado por error" } });
     D.E3 = r2.datos?.evento;
     return { ok: r1.status === 201 && r2.status === 201, obtenido: `${r1.status}, ${r2.status}` };
   });
@@ -403,8 +391,8 @@ const ejecutarCasos = async () => {
   await caso("T06", "El productor intenta eliminar una actividad", "403", async () =>
     codigo(await http("DELETE", `/trazabilidad/${D.E1._id}`, { token: T.prod }), 403));
 
-  await caso("T07", "La asociación elimina una actividad de su lote", "200", async () =>
-    codigo(await http("DELETE", `/trazabilidad/${D.E3._id}`, { token: T.asoc }), 200));
+  await caso("T07", "El administrador elimina una actividad", "200", async () =>
+    codigo(await http("DELETE", `/trazabilidad/${D.E3._id}`, { token: T.admin }), 200));
 
   await caso("T08", "Historial del lote", "200 · 2 actividades", async () => {
     const r = await http("GET", `/trazabilidad/lote/${D.L1._id}`, { token: T.prod });
@@ -421,8 +409,8 @@ const ejecutarCasos = async () => {
     return { ok: r.status === 201 && D.C1?.estado === "pendiente", obtenido: `${r.status} · ${D.C1?.estado}` };
   });
 
-  await caso("C02", "Solicitud sobre un lote de otra asociación (asociación)", "403", async () =>
-    codigo(await http("POST", "/certificaciones", { token: T.asoc, body: { lote: D.L3._id, tipoCertificacion: "Producción Orgánica" } }), 403));
+  await caso("C02", "El productor solicita sobre un lote ajeno", "403", async () =>
+    codigo(await http("POST", "/certificaciones", { token: T.prod, body: { lote: D.L3._id, tipoCertificacion: "Producción Orgánica" } }), 403));
 
   D.C2 = await crear("/certificaciones", T.admin, { lote: D.L3._id, tipoCertificacion: "Calidad del Producto" }, "certificacion");
 
@@ -634,7 +622,7 @@ const ejecutarCasos = async () => {
     codigo(await http("GET", "/public/qr/token-que-no-existe"), 404));
 
   await caso("Q10", "Al regenerar, el código anterior deja de funcionar", "Nuevo 200 · anterior 404", async () => {
-    const r = await http("PATCH", `/qr/lote/${D.L1._id}/regenerar`, { token: T.asoc });
+    const r = await http("PATCH", `/qr/lote/${D.L1._id}/regenerar`, { token: T.admin });
     const nuevo = r.datos?.qr?.token;
     const viejo = await http("GET", `/public/qr/${D.qr.token}`);
     const actual = await http("GET", `/public/qr/${nuevo}`);
@@ -650,8 +638,11 @@ const ejecutarCasos = async () => {
 
   grupo("8. Estadísticas y cuentas desactivadas");
 
-  await caso("E01", "Dashboard de la asociación", "200", async () =>
-    codigo(await http("GET", "/estadisticas/dashboard", { token: T.asoc }), 200));
+  await caso("E01", "Dashboard del administrador sin datos de asociaciones", "200 · sin totalAsociaciones", async () => {
+    const r = await http("GET", "/estadisticas/dashboard", { token: T.admin });
+    const resumen = r.datos?.resumen || {};
+    return { ok: r.status === 200 && !("totalAsociaciones" in resumen) && resumen.totalProductores === 3, obtenido: `${r.status} · ${resumen.totalProductores} productores${"totalAsociaciones" in resumen ? " · aún cuenta asociaciones" : ""}` };
+  });
 
   await caso("S01 / R20", "Una cuenta desactivada pierde el acceso de inmediato", "200 y después 403", async () => {
     const r = await http("PATCH", `/usuarios/${D.uProd._id}/estado`, { token: T.admin, body: { activo: false } });
@@ -677,7 +668,6 @@ const ejecutarCasos = async () => {
     email: "rosa@finca.ec",
     password: CLAVE,
     rolSolicitado: "productor",
-    asociacion: D.A1._id,
     aceptaPrivacidad: true,
     ...extra
   });
@@ -687,11 +677,10 @@ const ejecutarCasos = async () => {
     return lista(r.datos, "solicitudes");
   };
 
-  await caso("SC01", "Lista pública de asociaciones para el formulario", "200 · solo nombre y ubicación", async () => {
-    const r = await http("GET", "/public/asociaciones");
-    const l = Array.isArray(r.datos) ? r.datos : [];
-    const conRuc = l.some((a) => "ruc" in a || "telefono" in a || "email" in a);
-    return { ok: r.status === 200 && l.length === 2 && !conRuc, obtenido: `${r.status} · ${l.length} asociaciones${conRuc ? " · expone RUC/contacto" : ""}` };
+  await caso("SC01", "Datos públicos de la empresa para el formulario", "200 · nombre de la empresa", async () => {
+    const r = await http("GET", "/public/empresa");
+    const antigua = await http("GET", "/public/asociaciones");
+    return { ok: r.status === 200 && Boolean(r.datos?.nombre) && antigua.status === 404, obtenido: `${r.status} · ${r.datos?.nombre || "sin nombre"} · /public/asociaciones ${antigua.status}` };
   });
 
   await caso("SC02", "Solicitar una cuenta de administrador", "400", async () =>
@@ -734,17 +723,15 @@ const ejecutarCasos = async () => {
   });
 
   // Solicitudes que usan los casos siguientes
-  await http("POST", "/public/solicitudes", { body: solicitud({ nombre: "Luis", email: "luis@finca.ec", cedula: "1700000001", asociacion: D.A2._id }) });
+  await http("POST", "/public/solicitudes", { body: solicitud({ nombre: "Luis", email: "luis@finca.ec", cedula: "1700000001" }) });
   await http("POST", "/public/solicitudes", { body: solicitud({ nombre: "María", email: "maria@finca.ec", cedula: "0900000027" }) });
-  await http("POST", "/public/solicitudes", { body: solicitud({ nombre: "Elena", email: "elena@asociacion.ec", cedula: "1300000013", rolSolicitado: "asociacion", asociacion: "", nombreAsociacion: "Cacao Nuevo del Guayas" }) });
 
   const pendAdmin = await pendientesDe(T.admin);
   const sol = (email) => pendAdmin.find((x) => x.email === email);
 
-  await caso("SC10", "La asociación solo ve las solicitudes de sus productores", "Rosa y María, de A1", async () => {
-    const l = await pendientesDe(T.asoc);
-    const correos = l.map((x) => x.email).sort();
-    return { ok: iguales(correos, ["maria@finca.ec", "rosa@finca.ec"]), obtenido: correos.join(", ") || "ninguna" };
+  await caso("SC10", "El administrador ve todas las solicitudes pendientes", "Luis, María y Rosa", async () => {
+    const correos = pendAdmin.map((x) => x.email).sort();
+    return { ok: iguales(correos, ["luis@finca.ec", "maria@finca.ec", "rosa@finca.ec"]), obtenido: correos.join(", ") || "ninguna" };
   });
 
   await caso("SC11", "Las respuestas de revisión no incluyen la contraseña", "Sin campo password", async () => ({
@@ -752,28 +739,30 @@ const ejecutarCasos = async () => {
     obtenido: pendAdmin.some((x) => "password" in x) ? "Incluye password" : "Sin password"
   }));
 
-  await caso("SC12", "Contador de pendientes del administrador", "4", async () => {
+  await caso("SC12", "Contador de pendientes del administrador", "3", async () => {
     const r = await http("GET", "/solicitudes/pendientes/total", { token: T.admin });
-    return { ok: r.status === 200 && r.datos?.total === 4, obtenido: `${r.status} · ${r.datos?.total}` };
+    return { ok: r.status === 200 && r.datos?.total === 3, obtenido: `${r.status} · ${r.datos?.total}` };
   });
 
   await caso("SC13", "Un certificador intenta revisar solicitudes", "403", async () =>
     codigo(await http("GET", "/solicitudes", { token: T.cert }), 403));
 
-  await caso("SC14", "La asociación aprueba la solicitud de un productor de otra asociación", "403", async () =>
-    codigo(await http("PATCH", `/solicitudes/${sol("luis@finca.ec")._id}/aprobar`, { token: T.asoc, body: {} }), 403));
+  await caso("SC14", "Un certificador intenta aprobar una solicitud", "403", async () =>
+    codigo(await http("PATCH", `/solicitudes/${sol("luis@finca.ec")._id}/aprobar`, { token: T.cert2, body: {} }), 403));
 
-  await caso("SC15", "La asociación aprueba a un productor nuevo de su asociación", "200 · cuenta y ficha de productor", async () => {
-    const r = await http("PATCH", `/solicitudes/${sol("rosa@finca.ec")._id}/aprobar`, { token: T.asoc, body: {} });
-    const prods = lista((await http("GET", "/productores", { token: T.asoc })).datos, "productores");
+  await caso("SC15", "El administrador aprueba a un productor nuevo", "200 · cuenta y ficha de productor", async () => {
+    const r = await http("PATCH", `/solicitudes/${sol("rosa@finca.ec")._id}/aprobar`, { token: T.admin, body: {} });
+    const prods = lista((await http("GET", "/productores", { token: T.admin })).datos, "productores");
     const ficha = prods.find((p) => p.cedula === "0912345675");
     D.fichaRosa = ficha;
-    return { ok: r.status === 200 && Boolean(ficha), obtenido: `${r.status} · ficha ${ficha ? "creada en A1" : "no encontrada"}` };
+    return { ok: r.status === 200 && Boolean(ficha), obtenido: `${r.status} · ficha ${ficha ? "creada" : "no encontrada"}` };
   });
 
-  await caso("SC24", "La ficha del productor recibe el celular y la dirección de la finca", "Celular y dirección completos", async () => ({
-    ok: D.fichaRosa?.telefono === "0991234567" && /Finca La Ceiba.*Recinto Los Monos, Milagro, Guayas/.test(D.fichaRosa?.direccion || ""),
-    obtenido: `${D.fichaRosa?.telefono || "sin celular"} · ${D.fichaRosa?.direccion || "sin dirección"}`
+  await caso("SC24", "La ficha del productor recibe el celular y la ubicación de la finca", "Celular, dirección y ubicación completos", async () => ({
+    ok: D.fichaRosa?.telefono === "0991234567" &&
+      /Finca La Ceiba.*Recinto Los Monos, Milagro, Guayas/.test(D.fichaRosa?.direccion || "") &&
+      D.fichaRosa?.ubicacion?.canton === "Milagro" && D.fichaRosa?.ubicacion?.parroquia === "Recinto Los Monos",
+    obtenido: `${D.fichaRosa?.telefono || "sin celular"} · ${D.fichaRosa?.direccion || "sin dirección"} · cantón ${D.fichaRosa?.ubicacion?.canton || "—"}`
   }));
 
   await caso("SC16", "La persona aprobada inicia sesión y ve su panel", "200 · rol productor", async () => {
@@ -812,19 +801,18 @@ const ejecutarCasos = async () => {
     codigo(await http("PATCH", `/solicitudes/${sol("luis@finca.ec")._id}/rechazar`, { token: T.admin, body: {} }), 400));
 
   await caso("SC20", "Rechazar con motivo y la persona ve el motivo al entrar", "200 y luego 403 con el motivo", async () => {
-    const r = await http("PATCH", `/solicitudes/${sol("luis@finca.ec")._id}/rechazar`, { token: T.admin, body: { motivo: "No figura como socio de la asociación" } });
+    const r = await http("PATCH", `/solicitudes/${sol("luis@finca.ec")._id}/rechazar`, { token: T.admin, body: { motivo: "No figura como productor de la empresa" } });
     const l = await http("POST", "/auth/login", { body: { email: "luis@finca.ec", password: CLAVE } });
-    return { ok: r.status === 200 && l.status === 403 && /socio/.test(l.datos?.mensaje || ""), obtenido: `${r.status} · login ${l.status} ${l.datos?.mensaje || ""}` };
+    return { ok: r.status === 200 && l.status === 403 && /productor de la empresa/.test(l.datos?.mensaje || ""), obtenido: `${r.status} · login ${l.status} ${l.datos?.mensaje || ""}` };
   });
 
-  await caso("SC21", "Aprobar una asociación nueva sin elegir la asociación registrada", "400", async () =>
-    codigo(await http("PATCH", `/solicitudes/${sol("elena@asociacion.ec")._id}/aprobar`, { token: T.admin, body: {} }), 400));
+  await caso("SC21", "Solicitar una cuenta de asociación", "400 · solo cuentas de productor", async () =>
+    codigo(await http("POST", "/public/solicitudes", { body: solicitud({ nombre: "Elena", email: "elena@finca.ec", cedula: "1300000013", rolSolicitado: "asociacion" }) }), 400));
 
-  await caso("SC22", "El administrador aprueba la cuenta de asociación eligiendo A2", "200 · el perfil muestra A2", async () => {
-    const r = await http("PATCH", `/solicitudes/${sol("elena@asociacion.ec")._id}/aprobar`, { token: T.admin, body: { asociacion: D.A2._id } });
-    const t = await login("elena@asociacion.ec");
+  await caso("SC22", "La cuenta aprobada pertenece a la empresa", "Perfil con empresa y sin asociación", async () => {
+    const t = await login("rosa@finca.ec");
     const p = await http("GET", "/auth/perfil", { token: t });
-    return { ok: r.status === 200 && String(p.datos?.asociacion?._id) === String(D.A2._id), obtenido: `${r.status} · ${p.datos?.asociacion?.nombre || "sin asociación"}` };
+    return { ok: p.status === 200 && Boolean(p.datos?.empresa?.nombre) && !("asociacion" in (p.datos || {})), obtenido: `${p.status} · ${p.datos?.empresa?.nombre || "sin empresa"}` };
   });
 
 

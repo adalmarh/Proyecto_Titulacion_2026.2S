@@ -4,7 +4,6 @@ import { Link, Navigate } from "react-router-dom";
 import {
   LuSprout,
   LuTractor,
-  LuBuilding2,
   LuUser,
   LuIdCard,
   LuPhone,
@@ -27,17 +26,13 @@ import { PROVINCIAS_ECUADOR } from "../utils/formatos";
 
 // ==========================================================
 // SOLICITAR CUENTA (página pública)
-// Productores y representantes de asociaciones piden acceso.
-// La cuenta se crea cuando su asociación (en el caso de los
-// productores) o el administrador aprueba la solicitud.
+// Los productores de la empresa piden acceso. La cuenta se
+// crea cuando el administrador aprueba la solicitud.
 // Estilos en index.css (secciones "Inicio de sesión" y
 // "Solicitud de cuenta").
 // ==========================================================
 
-const OTRA_ASOCIACION = "otra";
-
 const formularioVacio = {
-  rolSolicitado: "productor",
   nombre: "",
   apellido: "",
   cedula: "",
@@ -49,8 +44,6 @@ const formularioVacio = {
   email: "",
   password: "",
   confirmar: "",
-  asociacion: "",
-  nombreAsociacion: "",
   mensaje: "",
   aceptaPrivacidad: false,
   sitioWeb: ""   // campo trampa para programas automáticos
@@ -74,35 +67,24 @@ const SolicitarCuenta = () => {
   const { usuario } = useContext(AuthContext);
 
   const [formulario, setFormulario] = useState(formularioVacio);
-  const [asociaciones, setAsociaciones] = useState([]);
+  const [empresa, setEmpresa] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
   const [enviada, setEnviada] = useState(false);
 
   useEffect(() => {
-    api.get("/public/asociaciones")
-      .then((r) => setAsociaciones(Array.isArray(r.data) ? r.data : []))
-      .catch(() => setAsociaciones([]));
+    api.get("/public/empresa")
+      .then((r) => setEmpresa(r.data?.nombre || ""))
+      .catch(() => setEmpresa(""));
   }, []);
 
   if (usuario) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const esProductor = formulario.rolSolicitado === "productor";
-
   const cambiar = (evento) => {
     const { name, value, type, checked } = evento.target;
     setFormulario((anterior) => ({ ...anterior, [name]: type === "checkbox" ? checked : value }));
-  };
-
-  const elegirTipo = (rol) => {
-    setFormulario((anterior) => ({
-      ...anterior,
-      rolSolicitado: rol,
-      // "otra asociación" solo vale para representantes
-      asociacion: rol === "productor" && anterior.asociacion === OTRA_ASOCIACION ? "" : anterior.asociacion
-    }));
   };
 
   const enviar = async (evento) => {
@@ -120,9 +102,7 @@ const SolicitarCuenta = () => {
     }
 
     if (formulario.direccion.trim().length < 10) {
-      setError(esProductor
-        ? "Describe cómo llegar a tu finca (al menos 10 caracteres)."
-        : "Indica la dirección de la sede (al menos 10 caracteres).");
+      setError("Describe cómo llegar a tu finca (al menos 10 caracteres).");
       return;
     }
 
@@ -136,23 +116,16 @@ const SolicitarCuenta = () => {
       return;
     }
 
-    if (!formulario.asociacion) {
-      setError(esProductor ? "Selecciona tu asociación." : "Selecciona tu asociación o elige «Mi asociación no está en la lista».");
-      return;
-    }
-
     if (!formulario.aceptaPrivacidad) {
       setError("Para enviar la solicitud debes leer y aceptar el aviso de privacidad.");
       return;
     }
 
-    const nueva = formulario.asociacion === OTRA_ASOCIACION;
-
     try {
       setEnviando(true);
 
       await api.post("/public/solicitudes", {
-        rolSolicitado: formulario.rolSolicitado,
+        rolSolicitado: "productor",
         nombre: formulario.nombre,
         apellido: formulario.apellido,
         cedula: formulario.cedula,
@@ -163,8 +136,6 @@ const SolicitarCuenta = () => {
         direccion: formulario.direccion,
         email: formulario.email,
         password: formulario.password,
-        asociacion: nueva ? "" : formulario.asociacion,
-        nombreAsociacion: nueva ? formulario.nombreAsociacion : "",
         mensaje: formulario.mensaje,
         aceptaPrivacidad: formulario.aceptaPrivacidad,
         sitioWeb: formulario.sitioWeb
@@ -196,7 +167,7 @@ const SolicitarCuenta = () => {
         <div>
           <h1>Solicita tu cuenta</h1>
           <p>
-            Para productores de cacao fino de aroma y asociaciones que
+            Para los productores de cacao fino de aroma{empresa ? ` de ${empresa}` : ""} que
             quieren registrar la trazabilidad de sus lotes.
           </p>
         </div>
@@ -208,7 +179,7 @@ const SolicitarCuenta = () => {
           </li>
           <li>
             <LuClipboardCheck aria-hidden="true" />
-            Tu asociación o el administrador revisa la solicitud
+            El administrador de la empresa revisa la solicitud
           </li>
           <li>
             <LuLogIn aria-hidden="true" />
@@ -231,9 +202,7 @@ const SolicitarCuenta = () => {
               <LuCircleCheck aria-hidden="true" />
               <h2>Solicitud enviada</h2>
               <p>
-                {esProductor
-                  ? "Tu asociación revisará tus datos."
-                  : "El administrador revisará tus datos."}{" "}
+                El administrador revisará tus datos.{" "}
                 Cuando la aprueben podrás iniciar sesión con{" "}
                 <strong>{formulario.email}</strong> y la contraseña que elegiste.
               </p>
@@ -264,38 +233,16 @@ const SolicitarCuenta = () => {
 
               <form onSubmit={enviar} noValidate={false}>
 
-                {/* TIPO DE CUENTA */}
-                <fieldset className="registro-tipos">
-                  <legend>Tipo de cuenta *</legend>
-
-                  <label className={`registro-tipo${esProductor ? " registro-tipo-activo" : ""}`}>
-                    <input
-                      type="radio"
-                      name="rolSolicitado"
-                      checked={esProductor}
-                      onChange={() => elegirTipo("productor")}
-                    />
-                    <LuTractor aria-hidden="true" />
-                    <span>
-                      <strong>Productor</strong>
-                      <small>Registro las actividades de mis lotes</small>
-                    </span>
-                  </label>
-
-                  <label className={`registro-tipo${!esProductor ? " registro-tipo-activo" : ""}`}>
-                    <input
-                      type="radio"
-                      name="rolSolicitado"
-                      checked={!esProductor}
-                      onChange={() => elegirTipo("asociacion")}
-                    />
-                    <LuBuilding2 aria-hidden="true" />
-                    <span>
-                      <strong>Asociación</strong>
-                      <small>Represento a una asociación de productores</small>
-                    </span>
-                  </label>
-                </fieldset>
+                {/* EMPRESA: todas las cuentas son de productor */}
+                <div className="registro-empresa">
+                  <LuTractor aria-hidden="true" />
+                  <span>
+                    <strong>Cuenta de productor</strong>
+                    <small>
+                      {empresa ? `Productores de cacao de ${empresa}` : "Productores de cacao fino de aroma"}
+                    </small>
+                  </span>
+                </div>
 
                 <div className="registro-campos">
 
@@ -336,42 +283,10 @@ const SolicitarCuenta = () => {
                     />
                   </Campo>
 
-                  <Campo id="s-asociacion" etiqueta={esProductor ? "Asociación a la que perteneces *" : "Asociación que representas *"} icono={LuBuilding2} ancho>
-                    <select id="s-asociacion" name="asociacion" value={formulario.asociacion} onChange={cambiar} required>
-                      <option value="">Selecciona la asociación</option>
-                      {asociaciones.map((a) => (
-                        <option key={a._id} value={a._id}>
-                          {a.nombre}{a.canton ? ` · ${a.canton}` : ""}
-                        </option>
-                      ))}
-                      {!esProductor && (
-                        <option value={OTRA_ASOCIACION}>Mi asociación no está en la lista</option>
-                      )}
-                    </select>
-                  </Campo>
-
-                  {!esProductor && formulario.asociacion === OTRA_ASOCIACION && (
-                    <Campo
-                      id="s-nueva"
-                      etiqueta="Nombre de tu asociación *"
-                      icono={LuBuilding2}
-                      ancho
-                      ayuda="El administrador la registrará antes de aprobar tu cuenta."
-                    >
-                      <input id="s-nueva" name="nombreAsociacion" value={formulario.nombreAsociacion} onChange={cambiar} minLength={3} maxLength={100} required />
-                    </Campo>
-                  )}
-
-                  {esProductor && asociaciones.length === 0 && (
-                    <p className="registro-ayuda registro-ancho">
-                      Aún no hay asociaciones registradas. Pide a tu asociación que solicite su cuenta primero.
-                    </p>
-                  )}
-
                   {/* UBICACIÓN: permite verificar la finca o la sede en campo */}
                   <p className="registro-subtitulo registro-ancho">
-                    {esProductor ? "Ubicación de tu finca" : "Ubicación de la sede"}
-                    <span>Sirve para que la asociación o un técnico puedan visitarte y verificar tu producción.</span>
+                    Ubicación de tu finca
+                    <span>Sirve para que la empresa o un técnico puedan visitarte y verificar tu producción.</span>
                   </p>
 
                   <Campo id="s-provincia" etiqueta="Provincia *" icono={LuMap}>
@@ -389,7 +304,7 @@ const SolicitarCuenta = () => {
 
                   <Campo
                     id="s-parroquia"
-                    etiqueta={esProductor ? "Parroquia o recinto *" : "Parroquia"}
+                    etiqueta="Parroquia o recinto *"
                     icono={LuMapPin}
                     ancho
                   >
@@ -399,14 +314,14 @@ const SolicitarCuenta = () => {
                       value={formulario.parroquia}
                       onChange={cambiar}
                       maxLength={60}
-                      placeholder={esProductor ? "Ej.: Recinto Los Monos" : ""}
-                      required={esProductor}
+                      placeholder="Ej.: Recinto Los Monos"
+                      required
                     />
                   </Campo>
 
                   <Campo
                     id="s-direccion"
-                    etiqueta={esProductor ? "Cómo llegar a tu finca *" : "Dirección de la sede *"}
+                    etiqueta="Cómo llegar a tu finca *"
                     ancho
                   >
                     <textarea
@@ -417,9 +332,7 @@ const SolicitarCuenta = () => {
                       maxLength={200}
                       value={formulario.direccion}
                       onChange={cambiar}
-                      placeholder={esProductor
-                        ? "Ej.: Finca La Ceiba, km 5 vía a Naranjito, junto a la escuela"
-                        : "Ej.: Av. 17 de Septiembre y García Moreno, Milagro"}
+                      placeholder="Ej.: Finca La Ceiba, km 5 vía a Naranjito, junto a la escuela"
                       required
                     />
                   </Campo>
@@ -446,7 +359,7 @@ const SolicitarCuenta = () => {
                       maxLength={500}
                       value={formulario.mensaje}
                       onChange={cambiar}
-                      placeholder="Ej.: Soy socio desde 2019, finca en el recinto San Pedro"
+                      placeholder="Ej.: Entrego cacao a la empresa desde 2019, finca en el recinto San Pedro"
                     />
                   </Campo>
 

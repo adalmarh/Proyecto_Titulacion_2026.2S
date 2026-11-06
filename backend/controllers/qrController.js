@@ -605,8 +605,7 @@ const consultarQRPublico =
 
       const lote =
         await Lote.findById(codigoQR.lote)
-          .populate("productor", "nombre apellido")
-          .populate("asociacion", "nombre provincia canton");
+          .populate("productor", "nombre apellido");
 
       if (!lote) {
         return res.status(404).json({

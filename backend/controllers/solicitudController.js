@@ -4,7 +4,6 @@ const bcrypt = require("bcryptjs");
 const SolicitudCuenta = require("../models/SolicitudCuenta");
 const Usuario = require("../models/Usuario");
 const Productor = require("../models/Productor");
-const Asociacion = require("../models/Asociacion");
 
 const {
   VERSION_AVISO_PRIVACIDAD,
@@ -22,20 +21,18 @@ const {
 
 // ==========================================================
 // SOLICITUDES DE CUENTA
-// 1. Una persona envía la solicitud desde el inicio de sesión
-//    (ruta pública).
-// 2. El administrador revisa todas; la asociación revisa las
-//    de los productores que dicen pertenecer a ella.
-// 3. Al aprobar se crea la cuenta y, para un productor, su
-//    ficha de productor (o se vincula la que ya existía).
+// 1. Un productor envía la solicitud desde el inicio de
+//    sesión (ruta pública).
+// 2. El administrador (la empresa) la revisa.
+// 3. Al aprobar se crea la cuenta y su ficha de productor
+//    (o se vincula la que ya existía con esa cédula).
+// Todos los productores pertenecen a la misma empresa.
 // ==========================================================
 
-const ROLES_SOLICITABLES = ["productor", "asociacion"];
 const LONGITUD_MINIMA_PASSWORD = 6;
 
 const idValido = (id) => mongoose.Types.ObjectId.isValid(id);
 const texto = (valor) => String(valor ?? "").trim();
-const mismoId = (a, b) => a != null && b != null && String(a) === String(b);
 
 class ErrorSolicitud extends Error {
   constructor(mensaje, status = 400) {
@@ -70,21 +67,19 @@ const validarDatosSolicitud = (datos = {}) => {
   const direccion = texto(datos.direccion);
   const email = texto(datos.email).toLowerCase();
   const password = String(datos.password ?? "");
-  const rolSolicitado = texto(datos.rolSolicitado);
-  const asociacion = texto(datos.asociacion);
-  const nombreAsociacion = texto(datos.nombreAsociacion);
+  const rolSolicitado = texto(datos.rolSolicitado) || "productor";
   const mensaje = texto(datos.mensaje);
 
-  if (!nombre || !apellido || !cedula || !email || !password || !rolSolicitado) {
-    throw new ErrorSolicitud("Completa nombre, apellido, cédula, correo, contraseña y tipo de cuenta");
+  if (!nombre || !apellido || !cedula || !email || !password) {
+    throw new ErrorSolicitud("Completa nombre, apellido, cédula, correo y contraseña");
   }
 
   if (nombre.length > 60 || apellido.length > 60) {
     throw new ErrorSolicitud("El nombre y el apellido admiten hasta 60 caracteres");
   }
 
-  if (!ROLES_SOLICITABLES.includes(rolSolicitado)) {
-    throw new ErrorSolicitud("Solo se pueden solicitar cuentas de productor o de asociación");
+  if (rolSolicitado !== "productor") {
+    throw new ErrorSolicitud("Solo se pueden solicitar cuentas de productor");
   }
 
   if (!cedulaValida(cedula)) {
@@ -112,16 +107,12 @@ const validarDatosSolicitud = (datos = {}) => {
     throw new ErrorSolicitud("Indica el cantón");
   }
 
-  if (rolSolicitado === "productor" && !parroquia) {
+  if (!parroquia) {
     throw new ErrorSolicitud("Indica la parroquia o el recinto donde está tu finca");
   }
 
   if (direccion.length < 10) {
-    throw new ErrorSolicitud(
-      rolSolicitado === "productor"
-        ? "Describe cómo llegar a tu finca (al menos 10 caracteres)"
-        : "Indica la dirección de la sede de la asociación (al menos 10 caracteres)"
-    );
+    throw new ErrorSolicitud("Describe cómo llegar a tu finca (al menos 10 caracteres)");
   }
 
   if (canton.length > 60 || parroquia.length > 60 || direccion.length > 200) {
@@ -130,18 +121,6 @@ const validarDatosSolicitud = (datos = {}) => {
 
   if (password.length < LONGITUD_MINIMA_PASSWORD || password.length > 72) {
     throw new ErrorSolicitud(`La contraseña debe tener entre ${LONGITUD_MINIMA_PASSWORD} y 72 caracteres`);
-  }
-
-  if (asociacion && !idValido(asociacion)) {
-    throw new ErrorSolicitud("La asociación seleccionada no es válida");
-  }
-
-  if (rolSolicitado === "productor" && !asociacion) {
-    throw new ErrorSolicitud("Selecciona la asociación a la que perteneces");
-  }
-
-  if (rolSolicitado === "asociacion" && !asociacion && nombreAsociacion.length < 3) {
-    throw new ErrorSolicitud("Selecciona tu asociación o escribe su nombre");
   }
 
   if (mensaje.length > 500) {
@@ -165,28 +144,8 @@ const validarDatosSolicitud = (datos = {}) => {
     email,
     password,
     rolSolicitado,
-    asociacion: asociacion || null,
-    nombreAsociacion: asociacion ? "" : nombreAsociacion,
     mensaje
   };
-};
-
-
-// ==========================================
-// PÚBLICO: ASOCIACIONES PARA EL FORMULARIO
-// Solo nombre y ubicación (datos públicos).
-// ==========================================
-
-const listarAsociacionesPublicas = async (req, res) => {
-  try {
-    const asociaciones = await Asociacion.find({ activa: true })
-      .select("nombre provincia canton")
-      .sort({ nombre: 1 });
-
-    return res.status(200).json(asociaciones);
-  } catch (error) {
-    return responderError(res, error, "Error al obtener las asociaciones");
-  }
 };
 
 
@@ -206,13 +165,6 @@ const crearSolicitud = async (req, res) => {
 
     const datos = validarDatosSolicitud(req.body || {});
 
-    if (datos.asociacion) {
-      const existe = await Asociacion.exists({ _id: datos.asociacion, activa: true });
-      if (!existe) {
-        throw new ErrorSolicitud("La asociación seleccionada no existe o está desactivada", 404);
-      }
-    }
-
     if (await Usuario.exists({ email: datos.email })) {
       throw new ErrorSolicitud("Ya existe una cuenta con ese correo. Inicia sesión con ella.");
     }
@@ -225,11 +177,9 @@ const crearSolicitud = async (req, res) => {
       throw new ErrorSolicitud("Ya hay una solicitud pendiente con esa cédula");
     }
 
-    if (datos.rolSolicitado === "productor") {
-      const productor = await Productor.findOne({ cedula: datos.cedula }).select("usuario");
-      if (productor?.usuario) {
-        throw new ErrorSolicitud("Esa cédula ya tiene una cuenta. Inicia sesión con ella.");
-      }
+    const productor = await Productor.findOne({ cedula: datos.cedula }).select("usuario");
+    if (productor?.usuario) {
+      throw new ErrorSolicitud("Esa cédula ya tiene una cuenta. Inicia sesión con ella.");
     }
 
     await SolicitudCuenta.create({
@@ -252,32 +202,14 @@ const crearSolicitud = async (req, res) => {
 
 
 // ==========================================
-// ALCANCE: qué solicitudes revisa cada rol
+// ALCANCE: solo el administrador revisa
+// (la ruta ya lo exige; esto es una segunda
+// barrera por si se reutiliza el controlador).
 // ==========================================
 
-const filtroSolicitudes = (usuario) => {
-  if (usuario.rol === "administrador") {
-    return {};
-  }
+const filtroSolicitudes = () => ({});
 
-  // La asociación solo revisa a sus productores
-  return {
-    rolSolicitado: "productor",
-    asociacion: usuario.asociacion || null
-  };
-};
-
-const puedeRevisar = (usuario, solicitud) => {
-  if (usuario.rol === "administrador") {
-    return true;
-  }
-
-  return (
-    usuario.rol === "asociacion" &&
-    solicitud.rolSolicitado === "productor" &&
-    mismoId(solicitud.asociacion, usuario.asociacion)
-  );
-};
+const puedeRevisar = (usuario) => usuario.rol === "administrador";
 
 const buscarParaRevisar = async (req) => {
   if (!idValido(req.params.id)) {
@@ -290,7 +222,7 @@ const buscarParaRevisar = async (req) => {
     throw new ErrorSolicitud("La solicitud no existe", 404);
   }
 
-  if (!puedeRevisar(req.usuario, solicitud)) {
+  if (!puedeRevisar(req.usuario)) {
     throw new ErrorSolicitud("No tienes acceso a esta solicitud", 403);
   }
 
@@ -303,13 +235,13 @@ const buscarParaRevisar = async (req) => {
 
 
 // ==========================================
-// LISTAR (administrador y asociación)
+// LISTAR (administrador)
 // ?estado=pendiente|aprobada|rechazada
 // ==========================================
 
 const obtenerSolicitudes = async (req, res) => {
   try {
-    const filtro = filtroSolicitudes(req.usuario);
+    const filtro = filtroSolicitudes();
 
     if (["pendiente", "aprobada", "rechazada"].includes(req.query.estado)) {
       filtro.estado = req.query.estado;
@@ -317,7 +249,6 @@ const obtenerSolicitudes = async (req, res) => {
 
     const solicitudes = await SolicitudCuenta.find(filtro)
       .select("-password")
-      .populate("asociacion", "nombre provincia canton")
       .populate("revisadoPor", "nombre apellido")
       .sort({ createdAt: -1 })
       .lean();
@@ -325,13 +256,12 @@ const obtenerSolicitudes = async (req, res) => {
     // Para las pendientes de productor: ¿ya existe una
     // ficha de productor con esa cédula?
     const cedulas = solicitudes
-      .filter((s) => s.estado === "pendiente" && s.rolSolicitado === "productor")
+      .filter((s) => s.estado === "pendiente")
       .map((s) => s.cedula);
 
     const productores = cedulas.length
       ? await Productor.find({ cedula: { $in: cedulas } })
-        .select("nombre apellido cedula asociacion usuario")
-        .populate("asociacion", "nombre")
+        .select("nombre apellido cedula usuario")
         .lean()
       : [];
 
@@ -348,7 +278,6 @@ const obtenerSolicitudes = async (req, res) => {
               _id: p._id,
               nombre: p.nombre,
               apellido: p.apellido,
-              asociacion: p.asociacion,
               tieneCuenta: Boolean(p.usuario)
             }
             : null
@@ -369,7 +298,7 @@ const obtenerSolicitudes = async (req, res) => {
 const contarPendientes = async (req, res) => {
   try {
     const total = await SolicitudCuenta.countDocuments({
-      ...filtroSolicitudes(req.usuario),
+      ...filtroSolicitudes(),
       estado: "pendiente"
     });
 
@@ -389,10 +318,18 @@ const direccionCompleta = (s) =>
     .join(", ");
 
 
+// Ubicación de la finca para la ficha del productor
+// (se copia luego a cada lote nuevo)
+const ubicacionFinca = (s) => ({
+  provincia: texto(s.provincia),
+  canton: texto(s.canton),
+  parroquia: texto(s.parroquia),
+  descripcion: texto(s.direccion)
+});
+
+
 // ==========================================
-// APROBAR: crea la cuenta
-// body: { asociacion }  (solo el administrador
-// puede elegir o cambiar la asociación)
+// APROBAR: crea la cuenta del productor
 // ==========================================
 
 const aprobarSolicitud = async (req, res) => {
@@ -400,56 +337,34 @@ const aprobarSolicitud = async (req, res) => {
 
   try {
     const solicitud = await buscarParaRevisar(req);
-    const esAdmin = req.usuario.rol === "administrador";
-
-    const asociacionId = esAdmin
-      ? texto(req.body?.asociacion) || (solicitud.asociacion ? String(solicitud.asociacion) : "")
-      : String(req.usuario.asociacion);
-
-    if (!asociacionId || !idValido(asociacionId)) {
-      throw new ErrorSolicitud(
-        "Selecciona la asociación. Si es nueva, regístrala primero en Asociaciones."
-      );
-    }
-
-    const asociacion = await Asociacion.findOne({ _id: asociacionId, activa: true });
-    if (!asociacion) {
-      throw new ErrorSolicitud("La asociación no existe o está desactivada", 404);
-    }
 
     if (await Usuario.exists({ email: solicitud.email })) {
       throw new ErrorSolicitud("Ya existe una cuenta con ese correo");
     }
 
     // ---------- Productor: ficha nueva o existente ----------
-    let productor = null;
+    let productor = await Productor.findOne({ cedula: solicitud.cedula });
 
-    if (solicitud.rolSolicitado === "productor") {
-      productor = await Productor.findOne({ cedula: solicitud.cedula });
-
-      if (productor) {
-        if (productor.usuario) {
-          throw new ErrorSolicitud("Esa cédula ya tiene una cuenta");
-        }
-        if (!mismoId(productor.asociacion, asociacion._id)) {
-          throw new ErrorSolicitud("La cédula corresponde a un productor de otra asociación");
-        }
-        // Completar la ficha sin borrar lo que ya tenía
-        if (!productor.telefono && solicitud.telefono) productor.telefono = solicitud.telefono;
-        if (!productor.email) productor.email = solicitud.email;
-        if (!productor.direccion && direccionCompleta(solicitud)) productor.direccion = direccionCompleta(solicitud);
-      } else {
-        productor = await Productor.create({
-          nombre: solicitud.nombre,
-          apellido: solicitud.apellido,
-          cedula: solicitud.cedula,
-          telefono: solicitud.telefono,
-          email: solicitud.email,
-          direccion: direccionCompleta(solicitud),
-          asociacion: asociacion._id
-        });
-        productorNuevo = productor;
+    if (productor) {
+      if (productor.usuario) {
+        throw new ErrorSolicitud("Esa cédula ya tiene una cuenta");
       }
+      // Completar la ficha sin borrar lo que ya tenía
+      if (!productor.telefono && solicitud.telefono) productor.telefono = solicitud.telefono;
+      if (!productor.email) productor.email = solicitud.email;
+      if (!productor.direccion && direccionCompleta(solicitud)) productor.direccion = direccionCompleta(solicitud);
+      if (!productor.ubicacion?.canton) productor.ubicacion = ubicacionFinca(solicitud);
+    } else {
+      productor = await Productor.create({
+        nombre: solicitud.nombre,
+        apellido: solicitud.apellido,
+        cedula: solicitud.cedula,
+        telefono: solicitud.telefono,
+        email: solicitud.email,
+        direccion: direccionCompleta(solicitud),
+        ubicacion: ubicacionFinca(solicitud)
+      });
+      productorNuevo = productor;
     }
 
     // ---------- Cuenta ----------
@@ -459,8 +374,7 @@ const aprobarSolicitud = async (req, res) => {
       email: solicitud.email,
       password: solicitud.password, // ya está cifrada
       telefono: solicitud.telefono || "",
-      rol: solicitud.rolSolicitado,
-      asociacion: solicitud.rolSolicitado === "asociacion" ? asociacion._id : null,
+      rol: "productor",
       // El consentimiento que dio al enviar la solicitud
       consentimiento: solicitud.consentimiento?.version
         ? { version: solicitud.consentimiento.version, fecha: solicitud.consentimiento.fecha }
@@ -474,7 +388,6 @@ const aprobarSolicitud = async (req, res) => {
     }
 
     solicitud.estado = "aprobada";
-    solicitud.asociacion = asociacion._id;
     solicitud.revisadoPor = req.usuario._id;
     solicitud.fechaRevision = new Date();
     solicitud.usuarioCreado = usuario._id;
@@ -574,9 +487,9 @@ const estadoSolicitudParaLogin = async (email, password) => {
 module.exports = {
   validarDatosSolicitud,
   direccionCompleta,
+  ubicacionFinca,
   filtroSolicitudes,
   puedeRevisar,
-  listarAsociacionesPublicas,
   crearSolicitud,
   obtenerSolicitudes,
   contarPendientes,

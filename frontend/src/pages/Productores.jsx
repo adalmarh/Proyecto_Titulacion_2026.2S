@@ -12,16 +12,17 @@ import {
 } from "react-icons/lu";
 
 import api from "../services/api";
-import { usePermisos, ROLES } from "../utils/permisos";
+import { PROVINCIAS_ECUADOR } from "../utils/formatos";
 
 // Estilos: styles/sistema.css (importado en main.jsx)
 
 
 // ==========================================
 // GESTIÓN DE PRODUCTORES
-// Administrador: todos los productores.
-// Asociación: solo los de su asociación (el
-// backend la asigna automáticamente).
+// Solo el administrador: todos los productores
+// pertenecen a la misma empresa.
+// La ubicación de la finca se guarda aquí y se
+// copia sola a cada lote nuevo del productor.
 // ==========================================
 
 const formularioVacio = {
@@ -30,21 +31,22 @@ const formularioVacio = {
   cedula: "",
   telefono: "",
   email: "",
-  direccion: "",
-  asociacion: ""
+  provincia: "",
+  canton: "",
+  parroquia: "",
+  referencia: ""
 };
 
-const idDe = (valor) =>
-  (valor && typeof valor === "object" ? valor._id : valor) || "";
-
+// "referencia, parroquia, cantón, provincia" para el campo dirección
+const direccionDe = (f) =>
+  [f.referencia, f.parroquia, f.canton, f.provincia]
+    .map((x) => (x || "").trim())
+    .filter(Boolean)
+    .join(", ");
 
 const Productores = () => {
 
-  const { rol } = usePermisos();
-  const esAdmin = rol === ROLES.ADMIN;
-
   const [productores, setProductores] = useState([]);
-  const [asociaciones, setAsociaciones] = useState([]);
 
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
@@ -52,7 +54,6 @@ const Productores = () => {
   const [error, setError] = useState("");
 
   const [busqueda, setBusqueda] = useState("");
-  const [filtroAsociacion, setFiltroAsociacion] = useState("");
 
   const [modalAbierto, setModalAbierto] = useState(false);
   const [editando, setEditando] = useState(null);
@@ -68,13 +69,8 @@ const Productores = () => {
       setCargando(true);
       setError("");
 
-      const [resProductores, resAsociaciones] = await Promise.all([
-        api.get("/productores"),
-        api.get("/asociaciones")
-      ]);
-
+      const resProductores = await api.get("/productores");
       setProductores(resProductores.data || []);
-      setAsociaciones(resAsociaciones.data || []);
 
     } catch (err) {
       setError(
@@ -105,13 +101,9 @@ const Productores = () => {
           .toLowerCase()
           .includes(texto);
 
-      const coincideAsociacion =
-        !filtroAsociacion ||
-        idDe(p.asociacion) === filtroAsociacion;
-
-      return coincideTexto && coincideAsociacion;
+      return coincideTexto;
     });
-  }, [productores, busqueda, filtroAsociacion]);
+  }, [productores, busqueda]);
 
 
   // ========================================
@@ -120,11 +112,7 @@ const Productores = () => {
 
   const abrirNuevo = () => {
     setEditando(null);
-    setFormulario({
-      ...formularioVacio,
-      // La asociación solo tiene una opción: la suya
-      asociacion: asociaciones.length === 1 ? asociaciones[0]._id : ""
-    });
+    setFormulario({ ...formularioVacio });
     setError("");
     setMensaje("");
     setModalAbierto(true);
@@ -138,8 +126,11 @@ const Productores = () => {
       cedula: p.cedula || "",
       telefono: p.telefono || "",
       email: p.email || "",
-      direccion: p.direccion || "",
-      asociacion: idDe(p.asociacion)
+      provincia: p.ubicacion?.provincia || "",
+      canton: p.ubicacion?.canton || "",
+      parroquia: p.ubicacion?.parroquia || "",
+      // Productores antiguos: su dirección pasa a la referencia
+      referencia: p.ubicacion?.descripcion || (p.ubicacion?.canton ? "" : p.direccion || "")
     });
     setError("");
     setMensaje("");
@@ -161,13 +152,17 @@ const Productores = () => {
     event.preventDefault();
     setError("");
 
-    const datos = { ...formulario };
-
-    // Solo el administrador puede cambiar la asociación
-    // de un productor existente.
-    if (editando && !esAdmin) {
-      delete datos.asociacion;
-    }
+    const { provincia, canton, parroquia, referencia, ...personales } = formulario;
+    const datos = {
+      ...personales,
+      ubicacion: {
+        provincia,
+        canton: canton.trim(),
+        parroquia: parroquia.trim(),
+        descripcion: referencia.trim()
+      },
+      direccion: direccionDe(formulario)
+    };
 
     try {
       setGuardando(true);
@@ -234,9 +229,7 @@ const Productores = () => {
             Productores
           </h1>
           <p>
-            {esAdmin
-              ? "Registra a los productores de cacao y su asociación."
-              : "Registra y administra a los productores de tu asociación."}
+            Registra y administra a los productores de cacao de la empresa.
           </p>
         </div>
 
@@ -276,21 +269,6 @@ const Productores = () => {
             aria-label="Buscar productores"
           />
         </div>
-
-        {esAdmin && (
-          <select
-            value={filtroAsociacion}
-            onChange={(e) => setFiltroAsociacion(e.target.value)}
-            aria-label="Filtrar por asociación"
-          >
-            <option value="">Todas las asociaciones</option>
-            {asociaciones.map((a) => (
-              <option key={a._id} value={a._id}>
-                {a.nombre}
-              </option>
-            ))}
-          </select>
-        )}
       </div>
 
 
@@ -311,7 +289,6 @@ const Productores = () => {
                   <th>Productor</th>
                   <th>Cédula</th>
                   <th>Contacto</th>
-                  {esAdmin && <th>Asociación</th>}
                   <th>Cuenta</th>
                   <th>Estado</th>
                   <th>Acciones</th>
@@ -342,7 +319,6 @@ const Productores = () => {
                       )}
                     </td>
 
-                    {esAdmin && <td>{p.asociacion?.nombre || "—"}</td>}
 
                     <td>{p.usuario ? "Con acceso" : "Sin acceso"}</td>
 
@@ -458,35 +434,34 @@ const Productores = () => {
                   <input id="p-email" type="email" name="email" value={formulario.email} onChange={cambiarCampo} />
                 </div>
 
-                <div className="gs-campo gs-campo-ancho">
-                  <label htmlFor="p-direccion">Dirección o finca</label>
-                  <input id="p-direccion" name="direccion" value={formulario.direccion} onChange={cambiarCampo} />
+                <p className="gs-subtitulo-form gs-campo-ancho">
+                  Ubicación de la finca
+                  <span>Se copia automáticamente a cada lote nuevo de este productor.</span>
+                </p>
+
+                <div className="gs-campo">
+                  <label htmlFor="p-provincia">Provincia</label>
+                  <select id="p-provincia" name="provincia" value={formulario.provincia} onChange={cambiarCampo}>
+                    <option value="">Seleccione</option>
+                    {PROVINCIAS_ECUADOR.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
                 </div>
 
-                <div className="gs-campo gs-campo-ancho">
-                  <label htmlFor="p-asociacion">Asociación *</label>
-                  <select
-                    id="p-asociacion"
-                    name="asociacion"
-                    value={formulario.asociacion}
-                    onChange={cambiarCampo}
-                    disabled={!esAdmin}
-                    required
-                  >
-                    <option value="">Seleccione la asociación</option>
-                    {asociaciones
-                      .filter((a) => a.activa !== false)
-                      .map((a) => (
-                        <option key={a._id} value={a._id}>
-                          {a.nombre}
-                        </option>
-                      ))}
-                  </select>
-                  {!esAdmin && (
-                    <span className="gs-ayuda">
-                      Los productores se registran en tu asociación.
-                    </span>
-                  )}
+                <div className="gs-campo">
+                  <label htmlFor="p-canton">Cantón</label>
+                  <input id="p-canton" name="canton" value={formulario.canton} onChange={cambiarCampo} maxLength={60} />
+                </div>
+
+                <div className="gs-campo">
+                  <label htmlFor="p-parroquia">Parroquia o recinto</label>
+                  <input id="p-parroquia" name="parroquia" value={formulario.parroquia} onChange={cambiarCampo} maxLength={60} />
+                </div>
+
+                <div className="gs-campo">
+                  <label htmlFor="p-referencia">Referencia para llegar</label>
+                  <input id="p-referencia" name="referencia" value={formulario.referencia} onChange={cambiarCampo} maxLength={200} placeholder="Ej.: Finca La Ceiba, km 5 vía a Naranjito" />
                 </div>
 
               </div>

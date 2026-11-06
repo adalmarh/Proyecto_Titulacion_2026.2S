@@ -11,6 +11,8 @@
 // con sus observaciones.
 // ======================================================
 
+const { datosEmpresa } = require("./empresa");
+
 const nombrePersona = (persona) =>
   persona
     ? {
@@ -97,13 +99,8 @@ const armarRespuestaPublica = ({
 
     productor: nombrePersona(lote.productor),
 
-    asociacion: lote.asociacion
-      ? {
-        nombre: lote.asociacion.nombre,
-        provincia: lote.asociacion.provincia || "",
-        canton: lote.asociacion.canton || ""
-      }
-      : null,
+    // Empresa a la que pertenecen todos los productores
+    empresa: datosEmpresa(),
 
     trazabilidad: {
       totalEventos: eventos.length,

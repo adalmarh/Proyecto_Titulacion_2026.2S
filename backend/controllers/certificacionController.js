@@ -8,6 +8,7 @@ const Usuario =
   require("../models/Usuario");
 
 const crypto = require("crypto");
+const { datosEmpresa } = require("../utils/empresa");
 
 const generarCertificadoPDF =
   require("../utils/generarCertificadoPDF");
@@ -759,11 +760,6 @@ const aprobarCertificacion = async (
               path: "productor",
               select:
                 "nombre apellido cedula telefono email"
-            },
-            {
-              path: "asociacion",
-              select:
-                "nombre ruc direccion provincia canton telefono email representante"
             }
           ]
         })
@@ -1032,13 +1028,6 @@ const descargarCertificadoPDF =
 
                 select:
                   "nombre apellido cedula telefono email"
-              },
-
-              {
-                path: "asociacion",
-
-                select:
-                  "nombre ruc direccion provincia canton telefono email representante"
               }
             ]
           })
@@ -1359,10 +1348,9 @@ const verificarCertificadoPublico = async (req, res) => {
     const certificacion = await Certificacion.findOne({ codigoVerificacion: codigo })
       .populate({
         path: "lote",
-        select: "codigo producto cantidad unidad ubicacion productor asociacion",
+        select: "codigo producto cantidad unidad ubicacion productor",
         populate: [
-          { path: "productor", select: "nombre apellido" },
-          { path: "asociacion", select: "nombre provincia canton" }
+          { path: "productor", select: "nombre apellido" }
         ]
       })
       .populate("certificador", "nombre apellido");
@@ -1392,11 +1380,11 @@ const verificarCertificadoPublico = async (req, res) => {
         producto: lote.producto,
         cantidad: lote.cantidad,
         unidad: lote.unidad,
-        provincia: lote.ubicacion?.provincia || lote.asociacion?.provincia || "",
-        canton: lote.ubicacion?.canton || lote.asociacion?.canton || ""
+        provincia: lote.ubicacion?.provincia || "",
+        canton: lote.ubicacion?.canton || ""
       },
       productor: persona(lote.productor),
-      asociacion: lote.asociacion ? { nombre: lote.asociacion.nombre } : null,
+      empresa: datosEmpresa(),
       firma: certificacion.firma?.firmada
         ? {
           firmada: true,

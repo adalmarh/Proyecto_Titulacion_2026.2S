@@ -12,9 +12,9 @@ const EventoTrazabilidad = require("../models/EventoTrazabilidad");
 // Este módulo decide QUÉ DATOS puede ver y modificar
 // cada usuario según su rol:
 //
-//  - administrador: todo el sistema.
-//  - asociacion:    solo los datos de SU asociación
-//                   (Usuario.asociacion).
+//  - administrador: todo el sistema (representa a la
+//                   empresa a la que pertenecen todos
+//                   los productores).
 //  - productor:     solo SUS lotes (el Productor cuyo
 //                   campo "usuario" apunta a él).
 //  - certificador:  solo los lotes de las certificaciones
@@ -26,7 +26,6 @@ const EventoTrazabilidad = require("../models/EventoTrazabilidad");
 
 const ROLES = {
   ADMIN: "administrador",
-  ASOCIACION: "asociacion",
   PRODUCTOR: "productor",
   CERTIFICADOR: "certificador"
 };
@@ -54,7 +53,7 @@ const obtenerProductorPropio = async (req) => {
   req._productorPropio = await Productor.findOne({
     usuario: req.usuario._id,
     activo: true
-  }).select("_id asociacion");
+  }).select("_id");
 
   return req._productorPropio;
 };
@@ -75,10 +74,6 @@ const filtroLotes = async (req) => {
 
   if (usuario.rol === ROLES.ADMIN) {
     filtro = {};
-  } else if (usuario.rol === ROLES.ASOCIACION) {
-    filtro = usuario.asociacion
-      ? { asociacion: usuario.asociacion }
-      : NINGUNO;
   } else if (usuario.rol === ROLES.PRODUCTOR) {
     const propio = await obtenerProductorPropio(req);
     filtro = propio ? { productor: propio._id } : NINGUNO;
@@ -109,12 +104,6 @@ const filtroProductores = async (req) => {
     return {};
   }
 
-  if (usuario.rol === ROLES.ASOCIACION) {
-    return usuario.asociacion
-      ? { asociacion: usuario.asociacion }
-      : NINGUNO;
-  }
-
   if (usuario.rol === ROLES.PRODUCTOR) {
     const propio = await obtenerProductorPropio(req);
     return propio ? { _id: propio._id } : NINGUNO;
@@ -124,34 +113,6 @@ const filtroProductores = async (req) => {
     const filtro = await filtroLotes(req);
     const productores = await Lote.distinct("productor", filtro);
     return { _id: { $in: productores } };
-  }
-
-  return NINGUNO;
-};
-
-// Asociaciones que el usuario puede VER.
-const filtroAsociaciones = async (req) => {
-  const usuario = req.usuario;
-
-  if (usuario.rol === ROLES.ADMIN) {
-    return {};
-  }
-
-  if (usuario.rol === ROLES.ASOCIACION) {
-    return usuario.asociacion
-      ? { _id: usuario.asociacion }
-      : NINGUNO;
-  }
-
-  if (usuario.rol === ROLES.PRODUCTOR) {
-    const propio = await obtenerProductorPropio(req);
-    return propio ? { _id: propio.asociacion } : NINGUNO;
-  }
-
-  if (usuario.rol === ROLES.CERTIFICADOR) {
-    const filtro = await filtroLotes(req);
-    const asociaciones = await Lote.distinct("asociacion", filtro);
-    return { _id: { $in: asociaciones } };
   }
 
   return NINGUNO;
@@ -209,10 +170,6 @@ const puedeGestionarLote = async (req, lote) => {
     return true;
   }
 
-  if (usuario.rol === ROLES.ASOCIACION) {
-    return mismoId(lote.asociacion, usuario.asociacion);
-  }
-
   if (usuario.rol === ROLES.PRODUCTOR) {
     const propio = await obtenerProductorPropio(req);
     return Boolean(propio) && mismoId(lote.productor, propio._id);
@@ -261,7 +218,7 @@ const accesoLote = (obtenerId, modo = "ver") =>
       }
 
       const lote = await Lote.findById(loteId)
-        .select("_id productor asociacion");
+        .select("_id productor");
 
       if (!lote) {
         return res.status(404).json({
@@ -305,7 +262,7 @@ const accesoEvento = (modo = "ver") =>
       }
 
       const lote = await Lote.findById(evento.lote)
-        .select("_id productor asociacion");
+        .select("_id productor");
 
       if (!lote) {
         return res.status(404).json({
@@ -368,63 +325,20 @@ const accesoCertificacion = () =>
     }
   };
 
-// Verifica que el usuario pueda GESTIONAR un productor
-// (solo administrador, o la asociación a la que pertenece).
+// Verifica que el usuario pueda GESTIONAR un productor.
+// Solo el administrador (la empresa) gestiona productores.
 const accesoProductor = () =>
-  async (req, res, next) => {
-    try {
-      if (req.usuario.rol === ROLES.ADMIN) {
-        return next();
-      }
-
-      if (!idValido(req.params.id)) {
-        return res.status(400).json({
-          mensaje: "El identificador del productor no es válido"
-        });
-      }
-
-      const productor = await Productor.findById(req.params.id)
-        .select("asociacion");
-
-      if (!productor) {
-        return res.status(404).json({
-          mensaje: "Productor no encontrado"
-        });
-      }
-
-      if (
-        req.usuario.rol !== ROLES.ASOCIACION ||
-        !mismoId(productor.asociacion, req.usuario.asociacion)
-      ) {
-        return responderSinAcceso(res, "este productor");
-      }
-
+  (req, res, next) => {
+    if (req.usuario.rol === ROLES.ADMIN) {
       return next();
-    } catch (error) {
-      return manejarError(res, error);
     }
+
+    return responderSinAcceso(res, "este productor");
   };
 
-// El usuario con rol "asociacion" siempre trabaja con
-// su propia asociación: se ignora la que envíe el cliente.
-const forzarAsociacionPropia = (req, res, next) => {
-  if (req.usuario.rol === ROLES.ASOCIACION) {
-    if (!req.usuario.asociacion) {
-      return res.status(403).json({
-        mensaje: "Tu usuario no está vinculado a ninguna asociación"
-      });
-    }
-
-    req.body = req.body || {};
-    req.body.asociacion = String(req.usuario.asociacion);
-  }
-
-  return next();
-};
-
 // Quita del cuerpo los campos que solo el administrador
-// puede cambiar (por ejemplo, la asociación o el usuario
-// vinculado a un productor).
+// puede cambiar (por ejemplo, el usuario vinculado a un
+// productor).
 const soloAdminPuedeCambiar = (...campos) =>
   (req, res, next) => {
     if (req.usuario.rol !== ROLES.ADMIN && req.body) {
@@ -441,7 +355,6 @@ module.exports = {
   ROLES,
   filtroLotes,
   filtroProductores,
-  filtroAsociaciones,
   filtroEventos,
   filtroCertificaciones,
   puedeVerLote,
@@ -450,6 +363,5 @@ module.exports = {
   accesoEvento,
   accesoCertificacion,
   accesoProductor,
-  forzarAsociacionPropia,
   soloAdminPuedeCambiar
 };

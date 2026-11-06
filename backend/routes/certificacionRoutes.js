@@ -32,7 +32,7 @@ const router =
 // ==========================================
 // CONSULTAS
 // Administrador: todas.
-// Asociación y productor: las de sus lotes.
+// Productor: las de sus lotes.
 // Certificador: las que tiene asignadas.
 // ==========================================
 
@@ -74,7 +74,6 @@ router.post(
   protegerRuta,
   permitirRoles(
     "administrador",
-    "asociacion",
     "productor"
   ),
   accesoLote((req) => req.body && req.body.lote, "gestionar"),

@@ -8,7 +8,9 @@
     "dev": "nodemon server.js",
     "test": "node --test pruebas/alcance.test.js pruebas/respuestaPublica.test.js pruebas/solicitudes.test.js pruebas/firma.test.js pruebas/firmaControlador.test.js pruebas/perfil.test.js",
     "test:integracion": "node pruebas/integracion.js",
-    "firmar-prueba": "node scripts/firmarPdfPrueba.js"
+    "firmar-prueba": "node scripts/firmarPdfPrueba.js",
+    "eliminar-asociaciones": "node scripts/eliminarAsociaciones.js",
+    "completar-ubicaciones": "node scripts/completarUbicacionProductores.js"
   },
   "keywords": [],
   "author": "",

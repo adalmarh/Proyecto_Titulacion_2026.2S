@@ -25,13 +25,6 @@ const loteBase = {
     cedula: "1204567890",
     telefono: "0991112233",
     email: "pedro@correo.com"
-  },
-  asociacion: {
-    nombre: "Asociación Cacao Arriba",
-    provincia: "Los Ríos",
-    canton: "Quevedo",
-    ruc: "1790011223001",
-    email: "info@asociacion.ec"
   }
 };
 
@@ -55,18 +48,19 @@ test("no publica datos personales ni identificadores internos", () => {
   const r = armar(
     [cert({ estado: "aprobada", fechaEmision: "2026-09-01", fechaVencimiento: "2027-09-01" })],
     [{ tipo: "cosecha", descripcion: "Cosecha", fecha: "2026-10-01",
-       responsable: { nombre: "Ana", apellido: "Vera", rol: "asociacion", email: "ana@correo.com" } }]
+       responsable: { nombre: "Ana", apellido: "Vera", rol: "administrador", email: "ana@correo.com" } }]
   );
   const texto = JSON.stringify(r);
 
   for (const privado of ["1204567890", "0991112233", "pedro@correo.com",
-    "carla@correo.com", "ana@correo.com", "id-interno", "secreto", "1790011223001"]) {
+    "carla@correo.com", "ana@correo.com", "id-interno", "secreto"]) {
     assert.ok(!texto.includes(privado), `se publicó ${privado}`);
   }
 
   assert.deepEqual(r.productor, { nombre: "Pedro", apellido: "Alcívar" });
-  assert.equal(r.asociacion.canton, "Quevedo");
-  assert.equal(r.trazabilidad.eventos[0].responsable.rol, "asociacion");
+  assert.equal(r.empresa.nombre, "Cacaotera Aroma del Litoral S.A.", "muestra la empresa");
+  assert.equal(r.asociacion, undefined, "ya no hay asociación");
+  assert.equal(r.trazabilidad.eventos[0].responsable.rol, "administrador");
 });
 
 test("certificación aprobada y no vencida: vigente", () => {
@@ -97,4 +91,19 @@ test("sin certificaciones", () => {
   const r = armar();
   assert.equal(r.certificacion.estado, "sin_certificacion");
   assert.equal(r.qr.totalEscaneos, 5);
+});
+
+test("los datos de la empresa se configuran en el .env", () => {
+  const { datosEmpresa } = require("../utils/empresa");
+  const antes = { ...process.env };
+  try {
+    delete process.env.EMPRESA_NOMBRE;
+    assert.equal(datosEmpresa().nombre, "Cacaotera Aroma del Litoral S.A.", "nombre por defecto");
+    process.env.EMPRESA_NOMBRE = "  Cacao del Valle S.A.  ";
+    process.env.EMPRESA_RUC = "0990000000001";
+    process.env.EMPRESA_CIUDAD = "Milagro";
+    assert.deepEqual(datosEmpresa(), { nombre: "Cacao del Valle S.A.", ruc: "0990000000001", ciudad: "Milagro" });
+  } finally {
+    process.env = antes;
+  }
 });

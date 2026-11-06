@@ -36,12 +36,6 @@ const loteSchema = new mongoose.Schema(
       required: true
     },
 
-    asociacion: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Asociacion",
-      required: true
-    },
-
     ubicacion: {
       provincia: String,
       canton: String,

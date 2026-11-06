@@ -99,8 +99,8 @@ const PanelProductor = () => {
         <div>
           <h1>Hola, {usuario?.nombre}</h1>
           <p>
-            {usuario?.asociacion?.nombre
-              ? `Productor de ${usuario.asociacion.nombre}`
+            {usuario?.empresa?.nombre
+              ? `Productor de ${usuario.empresa.nombre}`
               : "Productor de cacao fino de aroma"}
           </p>
 
@@ -185,7 +185,7 @@ const PanelProductor = () => {
 
           {lotes.length === 0 ? (
             <div className="pn-vacio">
-              Todavía no tienes lotes. Tu asociación es quien los registra.
+              Todavía no tienes lotes. La empresa es quien los registra.
             </div>
           ) : (
             <ul className="pn-lista">

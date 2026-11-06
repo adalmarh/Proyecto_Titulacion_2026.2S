@@ -68,7 +68,7 @@ const pedir = async (fn, body, rol = "productor") => {
 
 test("cambiar el celular: valida el formato y lo copia a la ficha del productor", async () => {
   guardado = await nuevoUsuario();
-  fichaProductor = { _id: "p1", nombre: "Rosa", apellido: "Mendoza", telefono: "0990000000", asociacion: null };
+  fichaProductor = { _id: "p1", nombre: "Rosa", apellido: "Mendoza", telefono: "0990000000" };
 
   const malo = await pedir(actualizarPerfil, { telefono: "12345" });
   assert.equal(malo.estado, 400);

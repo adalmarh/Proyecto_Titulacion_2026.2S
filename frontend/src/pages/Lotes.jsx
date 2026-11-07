@@ -20,7 +20,10 @@ import ModalQR from "../components/ModalQR";
 import { usePermisos } from "../utils/permisos";
 import {
   NOMBRE_ESTADO_LOTE,
-  UNIDADES,
+  UNIDADES_ENTRADA,
+  ESTADOS_GRANO,
+  KG_POR_QUINTAL,
+  formatearCantidad,
   formatearFecha,
   nombreCompleto,
   idDe
@@ -48,7 +51,8 @@ const formularioVacio = {
   fechaEstimadaCosecha: "",
   fechaCosecha: "",
   cantidad: "",
-  unidad: "kg"
+  unidad: "kg",
+  estadoGrano: "seco"
 };
 
 const fechaCampo = (valor) => (valor ? String(valor).substring(0, 10) : "");
@@ -208,8 +212,10 @@ const Lotes = () => {
       fechaSiembra: fechaCampo(lote.fechaSiembra),
       fechaEstimadaCosecha: fechaCampo(lote.fechaEstimadaCosecha),
       fechaCosecha: fechaCampo(lote.fechaCosecha),
+      // La cantidad guardada siempre está en kg
       cantidad: lote.cantidad ?? "",
-      unidad: lote.unidad || "kg"
+      unidad: "kg",
+      estadoGrano: lote.estadoGrano || "seco"
     });
     setErrorForm("");
     setMensaje("");
@@ -249,7 +255,9 @@ const Lotes = () => {
       fechaSiembra: formulario.fechaSiembra || undefined,
       fechaEstimadaCosecha: formulario.fechaEstimadaCosecha || undefined,
       cantidad: Number(formulario.cantidad),
-      unidad: formulario.unidad
+      // El backend convierte a kg si viene en quintales
+      unidad: formulario.unidad,
+      estadoGrano: formulario.estadoGrano
     };
 
     try {
@@ -476,7 +484,10 @@ const Lotes = () => {
                       </td>
 
                       <td style={{ whiteSpace: "nowrap" }}>
-                        {Number(lote.cantidad).toLocaleString("es-EC")} {lote.unidad || "kg"}
+                        {formatearCantidad(lote.cantidad)}
+                        <span className="gs-secundario">
+                          Cacao {lote.estadoGrano === "baba" ? "en baba" : "seco"}
+                        </span>
                       </td>
 
                       <td>
@@ -603,19 +614,36 @@ const Lotes = () => {
                   id="l-cantidad"
                   name="cantidad"
                   type="number"
-                  min="0"
+                  min="0.01"
                   step="0.01"
                   value={formulario.cantidad}
                   onChange={cambiarCampo}
                   required
                 />
+                {Number(formulario.cantidad) > 0 && (
+                  <span className="gs-ayuda">
+                    {formulario.unidad === "quintales"
+                      ? `Se guardará como ${(Math.round(Number(formulario.cantidad) * KG_POR_QUINTAL * 100) / 100).toLocaleString("es-EC")} kg`
+                      : `Equivale a ≈ ${(Math.round((Number(formulario.cantidad) / KG_POR_QUINTAL) * 10) / 10).toLocaleString("es-EC")} quintales`}
+                  </span>
+                )}
               </div>
 
               <div className="gs-campo">
                 <label htmlFor="l-unidad">Unidad</label>
                 <select id="l-unidad" name="unidad" value={formulario.unidad} onChange={cambiarCampo}>
-                  {UNIDADES.map((u) => (
-                    <option key={u} value={u}>{u}</option>
+                  {UNIDADES_ENTRADA.map((u) => (
+                    <option key={u.valor} value={u.valor}>{u.texto}</option>
+                  ))}
+                </select>
+                <span className="gs-ayuda">1 quintal = 45,36 kg. Siempre se guarda en kg.</span>
+              </div>
+
+              <div className="gs-campo">
+                <label htmlFor="l-grano">Estado del grano</label>
+                <select id="l-grano" name="estadoGrano" value={formulario.estadoGrano} onChange={cambiarCampo}>
+                  {Object.entries(ESTADOS_GRANO).map(([valor, texto]) => (
+                    <option key={valor} value={valor}>{texto}</option>
                   ))}
                 </select>
               </div>

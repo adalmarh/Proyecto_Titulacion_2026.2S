@@ -1,6 +1,12 @@
 const Lote =
   require("../models/Lote");
 
+const {
+  aKilogramos,
+  estadoGranoValido,
+  ErrorCantidad
+} = require("../utils/cantidades");
+
 const Productor =
   require("../models/Productor");
 
@@ -36,7 +42,8 @@ const crearLote = async (
       fechaSiembra,
       fechaEstimadaCosecha,
       cantidad,
-      unidad
+      unidad,
+      estadoGrano
     } = req.body;
 
 
@@ -54,6 +61,25 @@ const crearLote = async (
           "Productor y cantidad son obligatorios"
       });
 
+    }
+
+
+    // ========================================
+    // CANTIDAD EN KG Y ESTADO DEL GRANO
+    // (si viene en quintales se convierte)
+    // ========================================
+
+    let cantidadKg;
+    let grano;
+
+    try {
+      cantidadKg = aKilogramos(cantidad, unidad);
+      grano = estadoGranoValido(estadoGrano);
+    } catch (error) {
+      if (error instanceof ErrorCantidad) {
+        return res.status(400).json({ mensaje: error.message });
+      }
+      throw error;
     }
 
 
@@ -114,9 +140,11 @@ const crearLote = async (
 
         fechaEstimadaCosecha,
 
-        cantidad,
+        cantidad: cantidadKg,
 
-        unidad
+        unidad: "kg",
+
+        estadoGrano: grano
 
       });
 
@@ -407,6 +435,30 @@ const actualizarLote = async (
 
     datosActualizacion.producto =
       PRODUCTO_CACAO;
+
+
+    // ========================================
+    // CANTIDAD SIEMPRE EN KG
+    // ========================================
+
+    try {
+      if (datosActualizacion.cantidad !== undefined) {
+        datosActualizacion.cantidad = aKilogramos(
+          datosActualizacion.cantidad,
+          datosActualizacion.unidad
+        );
+      }
+      if (datosActualizacion.estadoGrano !== undefined) {
+        datosActualizacion.estadoGrano = estadoGranoValido(datosActualizacion.estadoGrano);
+      }
+    } catch (error) {
+      if (error instanceof ErrorCantidad) {
+        return res.status(400).json({ mensaje: error.message });
+      }
+      throw error;
+    }
+
+    datosActualizacion.unidad = "kg";
 
 
     // ========================================

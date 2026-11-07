@@ -18,6 +18,7 @@ import { usePermisos } from "../utils/permisos";
 import {
   NOMBRE_TIPO_EVENTO,
   NOMBRE_ESTADO_LOTE,
+  formatearCantidad,
   formatearFecha,
   formatearFechaHora,
   nombreCompleto
@@ -374,7 +375,7 @@ const Trazabilidad = () => {
                   </span>
                 </dd>
                 <dt>Cantidad</dt>
-                <dd>{Number(lote.cantidad).toLocaleString("es-EC")} {lote.unidad || "kg"}</dd>
+                <dd>{formatearCantidad(lote.cantidad, lote.estadoGrano, { grano: true })}</dd>
               </dl>
             )}
           </div>

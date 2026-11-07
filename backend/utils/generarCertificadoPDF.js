@@ -1,6 +1,16 @@
 const PDFDocument = require("pdfkit");
 const QRCode = require("qrcode");
 const { datosEmpresa } = require("./empresa");
+const { aQuintales } = require("./cantidades");
+
+// "1.200 kg (26,5 qq aprox.) de cacao seco"
+// (sin el signo ≈: la fuente estándar del PDF no lo tiene)
+const textoCantidad = (lote) => {
+  if (lote.cantidad == null) return "—";
+  const kg = Number(lote.cantidad);
+  const grano = lote.estadoGrano === "baba" ? "en baba" : "seco";
+  return `${kg.toLocaleString("es-EC")} kg (${aQuintales(kg).toLocaleString("es-EC")} qq aprox.) de cacao ${grano}`;
+};
 
 
 // ==========================================================
@@ -116,7 +126,7 @@ const generarCertificadoPDF = async (certificacion, { urlVerificacion }) => {
   const filas = [
     ["Lote", lote.codigo || "—"],
     ["Producto", lote.producto || "Cacao fino de aroma"],
-    ["Cantidad", lote.cantidad != null ? `${Number(lote.cantidad).toLocaleString("es-EC")} ${lote.unidad || "kg"}` : "—"],
+    ["Cantidad", textoCantidad(lote)],
     ["Origen", [ubicacion.parroquia, ubicacion.canton, ubicacion.provincia].filter(Boolean).join(", ") || "—"],
     ["Productor", nombre(productor)],
     ["Empresa", [empresa.nombre, empresa.ruc && `RUC ${empresa.ruc}`].filter(Boolean).join(" · ")],

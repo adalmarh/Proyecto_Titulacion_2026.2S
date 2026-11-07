@@ -263,6 +263,36 @@ button {
   color: #c9b6a4;
 }
 
+/* ---------- Inicio de sesión con foto de fondo ----------
+   La foto (cacaotal con mazorcas) cubre toda la página.
+   Un degradado color cacao mantiene legible el texto de la
+   izquierda y el formulario va en una tarjeta blanca. */
+
+.login-con-fondo {
+  background: #2b1a10 var(--fondo-login) center / cover no-repeat;
+}
+
+.login-con-fondo .login-portada {
+  background: linear-gradient(
+    90deg,
+    rgba(43, 26, 16, 0.9) 0%,
+    rgba(43, 26, 16, 0.72) 55%,
+    rgba(43, 26, 16, 0.2) 100%
+  );
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.login-con-fondo .login-formulario {
+  background: linear-gradient(90deg, rgba(43, 26, 16, 0.2), rgba(43, 26, 16, 0.05));
+}
+
+.login-con-fondo .login-caja {
+  padding: 34px 32px 28px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 24px 60px rgba(20, 12, 6, 0.35);
+}
+
 .login-formulario {
   display: flex;
   align-items: center;
@@ -601,6 +631,19 @@ p.registro-ayuda {
   .login-portada {
     padding: 28px 24px;
     gap: 22px;
+  }
+
+  /* En una sola columna el degradado va de arriba hacia abajo */
+  .login-con-fondo .login-portada {
+    background: linear-gradient(180deg, rgba(43, 26, 16, 0.88), rgba(43, 26, 16, 0.6));
+  }
+
+  .login-con-fondo .login-formulario {
+    padding: 24px 16px 32px;
+  }
+
+  .login-con-fondo .login-caja {
+    padding: 26px 20px 22px;
   }
 
   .login-puntos,

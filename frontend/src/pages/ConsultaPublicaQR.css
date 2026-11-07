@@ -107,6 +107,15 @@
   padding-bottom: 36px;
 }
 
+/* La foto del cacaotal va detrás, cubierta por el color
+   cacao para que el sello y el texto se lean bien. */
+.cp-cabecera-foto {
+  background:
+    linear-gradient(180deg, rgba(59, 36, 24, 0.78) 0%, rgba(59, 36, 24, 0.9) 70%, var(--cp-cacao) 100%),
+    var(--cp-foto) center 35% / cover no-repeat,
+    var(--cp-cacao);
+}
+
 .cp-portada {
   display: grid;
   grid-template-columns: 1fr;

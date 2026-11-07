@@ -13,9 +13,11 @@ import {
   LuHourglass,
   LuFileClock,
   LuSignature,
+  LuCalendarClock,
   LuShieldCheck
 } from "react-icons/lu";
 
+import { diasParaVencer as diasPara } from "../utils/formatos";
 import api from "../services/api";
 import Modal from "../components/Modal";
 import ModalDictamen from "../components/ModalDictamen";
@@ -514,9 +516,19 @@ const Certificaciones = () => {
                       {formatearFecha(c.fechaSolicitud)}
                       <span className="gs-secundario">
                         {c.estado === "aprobada" || c.estado === "vencida"
-                          ? `Vence: ${formatearFecha(c.fechaVencimiento)}`
+                          ? `${c.estado === "vencida" ? "Venció" : "Vence"}: ${formatearFecha(c.fechaVencimiento)}`
                           : "Solicitud"}
                       </span>
+                      {c.estado === "aprobada" && diasPara(c.fechaVencimiento) !== null && diasPara(c.fechaVencimiento) <= 30 && (
+                        <span className="av-chip">
+                          <LuCalendarClock aria-hidden="true" />
+                          {diasPara(c.fechaVencimiento) <= 0
+                            ? "Vence hoy"
+                            : diasPara(c.fechaVencimiento) === 1
+                              ? "Vence mañana"
+                              : `Vence en ${diasPara(c.fechaVencimiento)} días`}
+                        </span>
+                      )}
                     </td>
 
                     <td>{accionesDe(c)}</td>

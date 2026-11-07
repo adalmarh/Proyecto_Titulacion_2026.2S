@@ -11,6 +11,7 @@ import {
   LuSignature
 } from "react-icons/lu";
 
+import AvisoVencimientos from "../components/AvisoVencimientos";
 import api from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import { descargarCertificadoPDF } from "../services/certificacionService";
@@ -20,6 +21,7 @@ import {
   NOMBRE_ESTADO_CERTIFICACION,
   NOMBRE_ESTADO_LOTE,
   NOMBRE_TIPO_EVENTO,
+  formatearCantidad,
   formatearFecha,
   nombreCompleto
 } from "../utils/formatos";
@@ -173,6 +175,9 @@ const PanelCertificador = () => {
         <LuShieldCheck className="pn-bienvenida-icono" aria-hidden="true" />
       </section>
 
+      {/* AVISOS DE VENCIMIENTO */}
+      <AvisoVencimientos />
+
 
       {mensaje && <div className="pn-alerta pn-alerta-exito">{mensaje}</div>}
       {error && <div className="pn-alerta pn-alerta-error">{error}</div>}
@@ -240,7 +245,7 @@ const PanelCertificador = () => {
                   <dt>Lote</dt>
                   <dd>{c.lote?.codigo || "—"}</dd>
                   <dt>Cantidad</dt>
-                  <dd>{c.lote ? `${c.lote.cantidad} ${c.lote.unidad || "kg"}` : "—"}</dd>
+                  <dd>{c.lote ? formatearCantidad(c.lote.cantidad, c.lote.estadoGrano, { grano: true }) : "—"}</dd>
                   <dt>Solicitante</dt>
                   <dd>{nombreCompleto(c.solicitante)}</dd>
                   <dt>Solicitada</dt>
@@ -351,7 +356,7 @@ const PanelCertificador = () => {
               <dt>Productor</dt>
               <dd>{nombreCompleto(detalleLote.productor)}</dd>
               <dt>Cantidad</dt>
-              <dd>{detalleLote.cantidad} {detalleLote.unidad || "kg"}</dd>
+              <dd>{formatearCantidad(detalleLote.cantidad, detalleLote.estadoGrano, { grano: true })}</dd>
               <dt>Etapa</dt>
               <dd>{NOMBRE_ESTADO_LOTE[detalleLote.estado] || detalleLote.estado}</dd>
               <dt>Siembra</dt>

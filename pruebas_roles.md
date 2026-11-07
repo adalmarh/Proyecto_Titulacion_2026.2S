@@ -117,7 +117,7 @@ Revisar en escritorio y en el celular (o con F12 → modo dispositivo, 390 px de
 1. En `backend/.env` agrega una línea con una base SOLO para pruebas (su nombre debe contener "prueba"):
    `MONGO_URI_PRUEBAS=mongodb://127.0.0.1:27017/agroseguro_pruebas`
 2. En `backend`, ejecuta `npm run test:integracion`.
-3. El script levanta su propio servidor en el puerto 5099, ejecuta 110 casos (incluye R01–R21 y las solicitudes de cuenta) y al final borra la base de pruebas. Tu base real no se usa.
+3. El script levanta su propio servidor en el puerto 5099, ejecuta 119 casos (incluye R01–R21 y las solicitudes de cuenta) y al final borra la base de pruebas. Tu base real no se usa.
 4. El informe queda en `backend/pruebas/resultados/integracion-<fecha>.md`.
 
 ## 8. Solicitudes de cuenta (desde el inicio de sesión)
@@ -176,3 +176,38 @@ Se entra haciendo clic en el nombre del usuario, arriba a la derecha.
 | PF05 | Cualquiera | Confirmación distinta de la nueva | «La confirmación no coincide…» |
 | PF06 | Cualquiera | Cambiar la contraseña correctamente, con la sesión abierta también en otro navegador | «Contraseña cambiada»; este navegador sigue dentro; en el otro, al recargar, pide iniciar sesión |
 | PF07 | Cualquiera | Cerrar sesión y entrar con la contraseña anterior y luego con la nueva | La anterior falla; la nueva entra |
+
+## 11. Límite de intentos al iniciar sesión
+
+| N.º | Rol | Acción | Resultado esperado |
+|---|---|---|---|
+| LI01 | Sin sesión | Escribir mal la contraseña de una cuenta 3 veces | «Correo o contraseña incorrectos. Te quedan 2 intentos antes de un bloqueo temporal.» |
+| LI02 | Sin sesión | Fallar 2 veces más (5 en total) | «Demasiados intentos fallidos. Por seguridad, espera 15 minutos…» |
+| LI03 | Sin sesión | Escribir la contraseña correcta durante el bloqueo | Sigue bloqueada |
+| LI04 | Sin sesión | Entrar con otra cuenta desde la misma computadora | Entra normalmente |
+| LI05 | Sin sesión | Esperar 15 minutos (o reiniciar el backend) y entrar con la contraseña correcta | Entra normalmente |
+
+## 12. Vencimiento de certificaciones
+
+Para probarlo sin esperar, aprueba una certificación con vencimiento dentro de pocos días. Para la vencida, cambia su `fechaVencimiento` a una fecha pasada en MongoDB Compass y recarga.
+
+| N.º | Rol | Acción | Resultado esperado |
+|---|---|---|---|
+| V01 | Certificador | Dictaminar → Aprobar | El calendario no deja elegir hoy ni una fecha pasada |
+| V02 | Administrador | Dashboard con una aprobada que vence en menos de 30 días | Aviso amarillo «… vence en los próximos 30 días» con el código, el lote, el productor y los días que faltan |
+| V03 | Administrador | Certificaciones | Esa certificación muestra la etiqueta «Vence en N días» |
+| V04 | Certificador | Mi panel | El mismo aviso, solo con sus certificaciones |
+| V05 | Productor | Mi panel | Aviso de sus certificaciones; no ve las de otros productores |
+| V06 | Cualquiera | Una aprobada con fecha pasada (o esperar a que venza) | En la siguiente hora, o al abrir Certificaciones, pasa a «Vencida»; aviso rojo en los paneles |
+| V07 | Sin sesión | Escanear el QR del lote con la certificación vencida | «La certificación de este lote está vencida» |
+
+## 13. Cantidad del lote (kg, quintales y estado del grano)
+
+| N.º | Rol | Acción | Resultado esperado |
+|---|---|---|---|
+| CA01 | Administrador | Nuevo lote → Cantidad 20, Unidad «Quintales (qq)» | Debajo dice «Se guardará como 907,18 kg» |
+| CA02 | Administrador | Guardar ese lote | En la lista: «907,18 kg (≈ 20 qq)» y «Cacao seco» |
+| CA03 | Administrador | Nuevo lote → Cantidad 1200 en kg | Debajo dice «Equivale a ≈ 26,5 quintales» |
+| CA04 | Administrador | Estado del grano «En baba (fresco)» | La lista y la trazabilidad dicen «en baba» |
+| CA05 | Administrador | Cantidad 0 | No deja guardar |
+| CA06 | Sin sesión | Consulta pública del QR y certificado PDF | La cantidad aparece en kg con su equivalente en quintales y el estado del grano |

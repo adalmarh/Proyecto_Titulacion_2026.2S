@@ -174,6 +174,10 @@ const iniciarServidor = async () => {
       MONGO_URI: URI,
       PORT: String(PUERTO),
       LIMITE_SOLICITUDES: "100",
+      // Límite por cuenta normal (5); por red, alto para que
+      // los demás casos no se bloqueen entre sí
+      LOGIN_MAX_INTENTOS: "5",
+      LOGIN_MAX_INTENTOS_RED: "100",
       QR_FRONTEND_URL: "http://localhost:5173"
     }
   });
@@ -347,6 +351,20 @@ const ejecutarCasos = async () => {
 
   await caso("L11", "El administrador cambia la etapa de un lote", "200 · etapa en_produccion", async () =>
     codigo(await http("PATCH", `/lotes/${D.L1._id}/estado`, { token: T.admin, body: { estado: "en_produccion" } }), 200));
+
+  await caso("L12", "Escribir la cantidad en quintales y el grano en baba", "200 · 453,59 kg en baba", async () => {
+    const r = await http("PUT", `/lotes/${D.L3._id}`, { token: T.admin, body: { cantidad: 10, unidad: "quintales", estadoGrano: "baba" } });
+    const l = r.datos?.lote || r.datos;
+    return { ok: r.status === 200 && l?.cantidad === 453.59 && l?.unidad === "kg" && l?.estadoGrano === "baba", obtenido: `${r.status} · ${l?.cantidad} ${l?.unidad} · ${l?.estadoGrano}` };
+  });
+
+  await caso("L13", "Cantidad cero o estado del grano inválido", "400 en ambos", async () => {
+    const a = await http("PUT", `/lotes/${D.L3._id}`, { token: T.admin, body: { cantidad: 0 } });
+    const b = await http("PUT", `/lotes/${D.L3._id}`, { token: T.admin, body: { estadoGrano: "tostado" } });
+    // Se deja el lote como estaba (500 kg, seco)
+    await http("PUT", `/lotes/${D.L3._id}`, { token: T.admin, body: { cantidad: 500, unidad: "kg", estadoGrano: "seco" } });
+    return { ok: a.status === 400 && b.status === 400, obtenido: `${a.status} · ${b.status}` };
+  });
 
 
   grupo("4. Productores");
@@ -859,6 +877,53 @@ const ejecutarCasos = async () => {
     const nueva = await http("POST", "/auth/login", { body: { email: "rosa@finca.ec", password: "nueva-clave-1" } });
     return { ok: anterior.status === 401 && nueva.status === 200, obtenido: `anterior ${anterior.status} · nueva ${nueva.status}` };
   });
+
+
+  grupo("11. Límite de intentos al iniciar sesión");
+
+  // Usa la cuenta del segundo certificador (ya no se usa después)
+  const intentar = (password) =>
+    http("POST", "/auth/login", { body: { email: "certificador2@pruebas.ec", password } });
+
+  await caso("LI01", "Tres contraseñas incorrectas seguidas", "401 · avisa que quedan 2 intentos", async () => {
+    await intentar("mala-1");
+    await intentar("mala-2");
+    const r = await intentar("mala-3");
+    return { ok: r.status === 401 && /quedan 2 intentos/.test(r.datos?.mensaje || ""), obtenido: `${r.status} · ${r.datos?.mensaje}` };
+  });
+
+  await caso("LI02", "Quinto intento fallido", "429 · bloqueo temporal", async () => {
+    await intentar("mala-4");
+    const r = await intentar("mala-5");
+    return { ok: r.status === 429 && /espera 15 minutos/.test(r.datos?.mensaje || ""), obtenido: `${r.status} · ${r.datos?.mensaje}` };
+  });
+
+  await caso("LI03", "Contraseña correcta durante el bloqueo", "429 · sigue bloqueada", async () =>
+    codigo(await intentar(CLAVE), 429));
+
+  await caso("LI04", "Otra cuenta desde la misma red no se bloquea", "200", async () =>
+    codigo(await http("POST", "/auth/login", { body: { email: "admin@pruebas.ec", password: CLAVE } }), 200));
+
+
+  grupo("12. Vencimiento de certificaciones");
+
+  await caso("V01", "Avisos de vencimiento del administrador", "200 · listas de por vencer y vencidas", async () => {
+    const r = await http("GET", "/certificaciones/avisos/vencimientos", { token: T.admin });
+    return {
+      ok: r.status === 200 && r.datos?.dias === 30 && Array.isArray(r.datos?.porVencer) && Array.isArray(r.datos?.vencidas),
+      obtenido: `${r.status} · ${r.datos?.porVencer?.length ?? "?"} por vencer · ${r.datos?.vencidas?.length ?? "?"} vencidas`
+    };
+  });
+
+  await caso("V02", "Los avisos no exponen cédulas ni correos", "Sin datos personales", async () => {
+    const r = await http("GET", "/certificaciones/avisos/vencimientos", { token: T.admin });
+    const texto = JSON.stringify(r.datos || {});
+    const fuga = ["0900000001", "@pruebas.ec", "@finca.ec"].some((x) => texto.includes(x));
+    return { ok: r.status === 200 && !fuga, obtenido: fuga ? "expone datos personales" : "sin datos personales" };
+  });
+
+  await caso("V03", "Sin sesión no se pueden consultar los avisos", "401", async () =>
+    codigo(await http("GET", "/certificaciones/avisos/vencimientos"), 401));
 };
 
 

@@ -77,6 +77,7 @@ const instalar = (Modelo, filas) => {
   Modelo.findOne = (f) => consulta(filas.find((d) => coincide(d, f)) || null);
   Modelo.findById = (id) => consulta(filas.find((d) => igual(d._id, id)) || null);
   Modelo.find = (f = {}) => consulta(filas.filter((d) => coincide(d, f)));
+  Modelo.updateMany = async () => ({ modifiedCount: 0 });
   Modelo.exists = async (f) => (filas.find((d) => coincide(d, f)) ? { _id: 1 } : null);
   Modelo.distinct = async (campo, f = {}) =>
     [...new Set(filas.filter((d) => coincide(d, f)).map((d) => d[campo]).filter((x) => x != null).map(String))]

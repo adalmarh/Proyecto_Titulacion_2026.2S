@@ -13,12 +13,14 @@ import {
   LuHistory
 } from "react-icons/lu";
 
+import AvisoVencimientos from "../components/AvisoVencimientos";
 import api from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import {
   NOMBRE_ESTADO_LOTE,
   NOMBRE_ESTADO_CERTIFICACION,
   NOMBRE_TIPO_EVENTO,
+  formatearCantidad,
   formatearFecha
 } from "../utils/formatos";
 
@@ -125,6 +127,9 @@ const PanelProductor = () => {
         <LuSprout className="pn-bienvenida-icono" aria-hidden="true" />
       </section>
 
+      {/* AVISOS DE VENCIMIENTO */}
+      <AvisoVencimientos esProductor />
+
 
       {error && <div className="pn-alerta pn-alerta-error">{error}</div>}
 
@@ -194,7 +199,7 @@ const PanelProductor = () => {
                   <div className="pn-item-principal">
                     <strong>{lote.codigo}</strong>
                     <span>
-                      {lote.cantidad} {lote.unidad || "kg"} ·
+                      {formatearCantidad(lote.cantidad, lote.estadoGrano, { grano: true })} ·
                       {" "}Cosecha estimada: {formatearFecha(lote.fechaEstimadaCosecha)}
                     </span>
                   </div>

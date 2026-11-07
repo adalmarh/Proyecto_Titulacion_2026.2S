@@ -20,11 +20,13 @@ import api from "../services/api";
 import {
   NOMBRE_ESTADO_LOTE,
   NOMBRE_TIPO_EVENTO,
+  formatearCantidad,
   formatearFecha
 } from "../utils/formatos";
 import { NOMBRE_ROL } from "../utils/permisos";
 import { iconoEvento } from "../utils/iconos";
 
+import fondoCacaotal from "../assets/fondo-login.jpg";
 import "./ConsultaPublicaQR.css";
 
 
@@ -258,7 +260,8 @@ const ConsultaPublicaQR = () => {
     <div className="cp">
 
       {/* ================= CABECERA ================= */}
-      <header className="cp-cabecera">
+      {/* Franja con la foto de un cacaotal: identidad de origen */}
+      <header className="cp-cabecera cp-cabecera-foto" style={{ "--cp-foto": `url(${fondoCacaotal})` }}>
         <div className="cp-ancho">
           <Marca />
 
@@ -306,7 +309,7 @@ const ConsultaPublicaQR = () => {
             <div>
               <dt>Cantidad</dt>
               <dd>
-                {Number(lote.cantidad).toLocaleString("es-EC")} {lote.unidad}
+                {formatearCantidad(lote.cantidad, lote.estadoGrano, { grano: true })}
               </dd>
             </div>
             <div>

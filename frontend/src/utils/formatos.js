@@ -81,8 +81,33 @@ export const TIPOS_CERTIFICACION = [
   "Certificación Sanitaria"
 ];
 
-// Unidades de medida de los lotes
-export const UNIDADES = ["kg", "quintales", "toneladas", "g"];
+// ---------- Cantidad del lote ----------
+// Se guarda siempre en kg; se puede escribir en quintales.
+// 1 quintal (qq) = 100 libras = 45,3592 kg
+export const KG_POR_QUINTAL = 45.3592;
+
+export const UNIDADES_ENTRADA = [
+  { valor: "kg", texto: "Kilogramos (kg)" },
+  { valor: "quintales", texto: "Quintales (qq)" }
+];
+
+export const ESTADOS_GRANO = {
+  seco: "Seco (fermentado y secado)",
+  baba: "En baba (fresco)"
+};
+
+const numeroEC = (n, decimales = 2) =>
+  Number(n).toLocaleString("es-EC", { maximumFractionDigits: decimales });
+
+// "1.200 kg (≈ 26,5 qq)"; con grano: "1.200 kg (≈ 26,5 qq) · seco"
+export const formatearCantidad = (cantidad, estadoGrano, { grano = false } = {}) => {
+  if (cantidad === null || cantidad === undefined || cantidad === "") return "—";
+  const kg = Number(cantidad);
+  const qq = Math.round((kg / KG_POR_QUINTAL) * 10) / 10;
+  const texto = `${numeroEC(kg)} kg (≈ ${numeroEC(qq, 1)} qq)`;
+  if (!grano) return texto;
+  return `${texto} · ${estadoGrano === "baba" ? "en baba" : "seco"}`;
+};
 
 
 // Fecha y hora (para actividades registradas con hora)
@@ -126,3 +151,9 @@ export const PROVINCIAS_ECUADOR = [
   "Pichincha", "Santa Elena", "Santo Domingo de los Tsáchilas",
   "Sucumbíos", "Tungurahua", "Zamora Chinchipe"
 ];
+
+// Días que faltan para una fecha (0 = hoy; negativo = ya pasó)
+export const diasParaVencer = (fecha) => {
+  if (!fecha) return null;
+  return Math.ceil((new Date(fecha).getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+};

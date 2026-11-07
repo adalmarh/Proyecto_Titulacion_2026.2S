@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const { estadoSolicitudParaLogin } = require("./solicitudController");
 const { VERSION_AVISO_PRIVACIDAD } = require("../utils/privacidad");
 const { datosEmpresa } = require("../utils/empresa");
+const { intentosLogin } = require("../utils/intentosLogin");
 const { normalizarCelular, celularValido } = require("../utils/validaciones");
 
 const LONGITUD_MINIMA_PASSWORD = 6;
@@ -82,6 +83,26 @@ const datosSesion = async (usuario) => {
 // lo hace el administrador desde /api/usuarios.)
 // =====================================
 
+// Respuesta cuando la contraseña o el correo no coinciden:
+// cuenta el fallo y, al llegar al límite, bloquea un rato.
+const responderFallo = (req, res, email) => {
+  const r = intentosLogin.fallo(req.ip, email);
+
+  if (r.bloqueado) {
+    return res.status(429).json({
+      mensaje: `Demasiados intentos fallidos. Por seguridad, espera ${r.minutos} minutos antes de volver a intentarlo.`
+    });
+  }
+
+  const aviso = r.restantes <= 2
+    ? ` Te ${r.restantes === 1 ? "queda 1 intento" : `quedan ${r.restantes} intentos`} antes de un bloqueo temporal.`
+    : "";
+
+  return res.status(401).json({
+    mensaje: `Correo o contraseña incorrectos.${aviso}`
+  });
+};
+
 const login = async (req, res) => {
   try {
     const { email, password } = req.body || {};
@@ -90,6 +111,14 @@ const login = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         mensaje: "Email y contraseña son obligatorios"
+      });
+    }
+
+    // ¿Bloqueado por demasiados intentos fallidos?
+    const bloqueo = intentosLogin.revisar(req.ip, email);
+    if (bloqueo.bloqueado) {
+      return res.status(429).json({
+        mensaje: `Demasiados intentos fallidos. Por seguridad, espera ${bloqueo.minutos} minutos antes de volver a intentarlo.`
       });
     }
 
@@ -108,9 +137,7 @@ const login = async (req, res) => {
         });
       }
 
-      return res.status(401).json({
-        mensaje: "Credenciales incorrectas"
-      });
+      return responderFallo(req, res, email);
     }
 
     // Verificar contraseña
@@ -120,10 +147,11 @@ const login = async (req, res) => {
     );
 
     if (!passwordCorrecta) {
-      return res.status(401).json({
-        mensaje: "Credenciales incorrectas"
-      });
+      return responderFallo(req, res, email);
     }
+
+    // Contraseña correcta: se borran los fallos de esta cuenta
+    intentosLogin.exito(req.ip, email);
 
     // Verificar usuario activo
     if (!usuario.activo) {
@@ -142,9 +170,10 @@ const login = async (req, res) => {
     });
 
   } catch (error) {
+    // El detalle va a la consola del servidor, no al navegador
+    console.error("Error al iniciar sesión:", error);
     return res.status(500).json({
-      mensaje: "Error al iniciar sesión",
-      error: error.message
+      mensaje: "Error al iniciar sesión"
     });
   }
 };

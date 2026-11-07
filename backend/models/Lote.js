@@ -61,9 +61,19 @@ const loteSchema = new mongoose.Schema(
       min: 0
     },
 
+    // Siempre "kg": si se escribe en quintales, el
+    // backend la convierte (utils/cantidades.js)
     unidad: {
       type: String,
       default: "kg"
+    },
+
+    // Estado del grano: seco (fermentado y secado)
+    // o en baba (fresco)
+    estadoGrano: {
+      type: String,
+      enum: ["seco", "baba"],
+      default: "seco"
     },
 
     estado: {

@@ -14,11 +14,13 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 
+import AvisoVencimientos from "../components/AvisoVencimientos";
 import api from "../services/api";
 import {
   NOMBRE_ESTADO_LOTE,
   NOMBRE_ESTADO_CERTIFICACION,
   NOMBRE_TIPO_EVENTO,
+  formatearCantidad,
   formatearFecha,
   nombreCompleto
 } from "../utils/formatos";
@@ -194,6 +196,9 @@ const Dashboard = () => {
         </button>
       </div>
 
+      {/* AVISOS DE VENCIMIENTO DE CERTIFICACIONES */}
+      <AvisoVencimientos />
+
 
       {error && (
         <div className="gs-alerta gs-alerta-error">
@@ -328,7 +333,7 @@ const Dashboard = () => {
                   <div>
                     <span className="gs-codigo">{lote.codigo}</span>
                     <span className="gs-secundario">
-                      {nombreCompleto(lote.productor)} · {lote.cantidad} {lote.unidad || "kg"}
+                      {nombreCompleto(lote.productor)} · {formatearCantidad(lote.cantidad)}
                     </span>
                   </div>
                   <span className={`gs-estado gs-estado-${lote.estado}`}>

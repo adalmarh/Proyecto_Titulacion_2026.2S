@@ -14,7 +14,7 @@ import {
 } from "react-icons/lu";
 
 import api from "../services/api";
-import { formatearFecha, formatearFechaHora } from "../utils/formatos";
+import { formatearCantidad, formatearFecha, formatearFechaHora } from "../utils/formatos";
 import { huellaSHA256 } from "../utils/sha256";
 
 import "./VerificarCertificado.css";
@@ -125,7 +125,7 @@ const VerificarCertificado = () => {
                 <dt>Producto</dt>
                 <dd>{datos.lote?.producto}</dd>
                 <dt>Cantidad</dt>
-                <dd>{datos.lote?.cantidad != null ? `${Number(datos.lote.cantidad).toLocaleString("es-EC")} ${datos.lote.unidad || "kg"}` : "—"}</dd>
+                <dd>{formatearCantidad(datos.lote?.cantidad, datos.lote?.estadoGrano, { grano: true })}</dd>
                 <dt>Origen</dt>
                 <dd>{[datos.lote?.canton, datos.lote?.provincia].filter(Boolean).join(", ") || "—"}</dd>
                 <dt>Productor</dt>

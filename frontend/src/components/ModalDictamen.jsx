@@ -28,7 +28,14 @@ const unAnio = () => {
   return fecha.toISOString().slice(0, 10);
 };
 
-const hoy = () => new Date().toISOString().slice(0, 10);
+
+// Primer día que se puede elegir como vencimiento (mañana):
+// una certificación no puede nacer vencida.
+const manana = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
 
 
 const ModalDictamen = ({
@@ -150,7 +157,7 @@ const ModalDictamen = ({
                   id="d-vencimiento"
                   type="date"
                   value={vencimiento}
-                  min={hoy()}
+                  min={manana()}
                   onChange={(e) => setVencimiento(e.target.value)}
                 />
                 <span className="gs-ayuda">Por defecto, un año desde hoy.</span>

@@ -93,6 +93,7 @@ const armarRespuestaPublica = ({
       fechaCosecha: lote.fechaCosecha || null,
       cantidad: lote.cantidad,
       unidad: lote.unidad || "kg",
+      estadoGrano: lote.estadoGrano || "seco",
       estado: lote.estado,
       activo: lote.activo !== false
     },

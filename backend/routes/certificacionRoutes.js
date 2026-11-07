@@ -3,6 +3,7 @@ const express = require("express");
 const {
   solicitarCertificacion,
   obtenerCertificaciones,
+  obtenerAvisosVencimiento,
   obtenerCertificacion,
   obtenerCertificacionesPorLote,
   asignarCertificador,
@@ -40,6 +41,14 @@ router.get(
   "/",
   protegerRuta,
   obtenerCertificaciones
+);
+
+// Avisos: aprobadas que vencen en 30 días y vencidas
+// recientes (cada rol ve las de su alcance)
+router.get(
+  "/avisos/vencimientos",
+  protegerRuta,
+  obtenerAvisosVencimiento
 );
 
 router.get(

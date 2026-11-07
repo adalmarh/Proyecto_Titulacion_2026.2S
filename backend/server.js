@@ -72,6 +72,14 @@ connectDB();
 
 const app = express();
 
+// Si el servidor está detrás de un proxy (por ejemplo, al
+// publicarlo en internet), TRUST_PROXY=1 hace que req.ip sea
+// la IP real del visitante. Lo usan el límite de intentos del
+// inicio de sesión y el de solicitudes de cuenta.
+if (process.env.TRUST_PROXY) {
+  app.set("trust proxy", Number(process.env.TRUST_PROXY) || 1);
+}
+
 
 // ==========================================
 // MIDDLEWARES
@@ -234,6 +242,24 @@ const limpiar = () =>
 
 setTimeout(limpiar, 10 * 1000);
 setInterval(limpiar, 24 * 60 * 60 * 1000).unref();
+
+
+// ==========================================
+// CERTIFICACIONES VENCIDAS
+// Las aprobadas cuya fecha de vencimiento ya
+// pasó se marcan como "vencidas" al arrancar
+// y luego cada hora.
+// ==========================================
+
+const { marcarCertificacionesVencidas } = require("./utils/vencimientos");
+
+const revisarVencimientos = () =>
+  marcarCertificacionesVencidas()
+    .then((n) => n && console.log(`Certificaciones marcadas como vencidas: ${n}`))
+    .catch((error) => console.error("Error al revisar vencimientos:", error.message));
+
+setTimeout(revisarVencimientos, 5 * 1000);
+setInterval(revisarVencimientos, 60 * 60 * 1000).unref();
 
 
 app.listen(

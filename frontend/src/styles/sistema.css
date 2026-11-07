@@ -752,6 +752,110 @@
   list-style: none;
 }
 
+/* ---------- Avisos de vencimiento de certificaciones (av-) ---------- */
+
+.av {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.av-bloque {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid;
+}
+
+.av-bloque > svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.av-por-vencer {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.av-vencidas {
+  background: #fff5f5;
+  border-color: #fed7d7;
+  color: #9b2c2c;
+}
+
+.av-bloque h2 {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.av-bloque p {
+  margin-top: 2px;
+  font-size: 13.5px;
+  opacity: 0.9;
+}
+
+.av-bloque ul {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  list-style: none;
+}
+
+.av-bloque li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  font-size: 13.5px;
+  color: #374151;
+}
+
+.av-bloque li strong {
+  color: #1f2937;
+}
+
+.av-cuando {
+  font-weight: 600;
+}
+
+.av-por-vencer .av-cuando {
+  color: #b45309;
+}
+
+.av-vencidas .av-cuando {
+  color: #c53030;
+}
+
+.av-enlace {
+  justify-self: start;
+  color: #2f855a;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+/* Etiqueta en la lista de certificaciones */
+.av-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.av-chip svg {
+  width: 13px;
+  height: 13px;
+}
+
 /* ---------- Subtítulo dentro de un formulario ---------- */
 
 .gs-subtitulo-form {

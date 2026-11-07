@@ -12,6 +12,7 @@ import {
 } from "react-icons/lu";
 
 import api from "../services/api";
+import fondoLogin from "../assets/fondo-login.jpg";
 import { AuthContext } from "../context/AuthContext";
 
 
@@ -70,7 +71,7 @@ const Login = () => {
 
 
   return (
-    <div className="login">
+    <div className="login login-con-fondo" style={{ "--fondo-login": `url(${fondoLogin})` }}>
 
       {/* PORTADA */}
       <section className="login-portada">

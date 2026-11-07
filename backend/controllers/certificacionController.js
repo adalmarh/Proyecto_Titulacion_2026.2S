@@ -9,6 +9,12 @@ const Usuario =
 
 const crypto = require("crypto");
 const { datosEmpresa } = require("../utils/empresa");
+const {
+  DIAS_AVISO,
+  diasParaVencer,
+  filtroPorVencer,
+  marcarCertificacionesVencidas
+} = require("../utils/vencimientos");
 
 const generarCertificadoPDF =
   require("../utils/generarCertificadoPDF");
@@ -120,7 +126,7 @@ const solicitarCertificacion = async (
         )
         .populate(
           "lote",
-          "codigo producto cantidad unidad estado"
+          "codigo producto cantidad unidad estadoGrano estado"
         )
         .populate(
           "solicitante",
@@ -177,6 +183,10 @@ const obtenerCertificaciones = async (
 
   try {
 
+    // Antes de listar, las aprobadas cuya fecha
+    // ya pasó quedan marcadas como vencidas
+    await marcarCertificacionesVencidas();
+
     // Cada rol ve solo las certificaciones
     // de su alcance (el certificador, las
     // que tiene asignadas)
@@ -194,7 +204,7 @@ const obtenerCertificaciones = async (
         })
         .populate(
           "lote",
-          "codigo producto cantidad unidad estado"
+          "codigo producto cantidad unidad estadoGrano estado"
         )
         .populate(
           "solicitante",
@@ -260,7 +270,7 @@ const obtenerCertificacion = async (
         )
         .populate(
           "lote",
-          "codigo producto cantidad unidad estado"
+          "codigo producto cantidad unidad estadoGrano estado"
         )
         .populate(
           "solicitante",
@@ -557,7 +567,7 @@ const asignarCertificador = async (
         )
         .populate(
           "lote",
-          "codigo producto cantidad unidad estado"
+          "codigo producto cantidad unidad estadoGrano estado"
         )
         .populate(
           "solicitante",
@@ -709,10 +719,17 @@ const aprobarCertificacion = async (
       fechaVencimiento
     ) {
 
-      certificacion.fechaVencimiento =
-        new Date(
-          fechaVencimiento
-        );
+      const fecha = new Date(fechaVencimiento);
+
+      // Debe ser una fecha válida y posterior a hoy;
+      // si no, la certificación nacería vencida
+      if (Number.isNaN(fecha.getTime()) || fecha <= new Date()) {
+        return res.status(400).json({
+          mensaje: "La fecha de vencimiento debe ser posterior a hoy"
+        });
+      }
+
+      certificacion.fechaVencimiento = fecha;
 
     }
 
@@ -952,7 +969,7 @@ const rechazarCertificacion = async (
         )
         .populate(
           "lote",
-          "codigo producto cantidad unidad estado"
+          "codigo producto cantidad unidad estadoGrano estado"
         )
         .populate(
           "solicitante",
@@ -1348,7 +1365,7 @@ const verificarCertificadoPublico = async (req, res) => {
     const certificacion = await Certificacion.findOne({ codigoVerificacion: codigo })
       .populate({
         path: "lote",
-        select: "codigo producto cantidad unidad ubicacion productor",
+        select: "codigo producto cantidad unidad estadoGrano ubicacion productor",
         populate: [
           { path: "productor", select: "nombre apellido" }
         ]
@@ -1380,6 +1397,7 @@ const verificarCertificadoPublico = async (req, res) => {
         producto: lote.producto,
         cantidad: lote.cantidad,
         unidad: lote.unidad,
+        estadoGrano: lote.estadoGrano || "seco",
         provincia: lote.ubicacion?.provincia || "",
         canton: lote.ubicacion?.canton || ""
       },
@@ -1409,7 +1427,78 @@ const verificarCertificadoPublico = async (req, res) => {
 // EXPORTAR CONTROLADORES
 // ==========================================
 
+// ==========================================
+// AVISOS DE VENCIMIENTO
+// Certificaciones aprobadas que vencen en los
+// próximos 30 días y las que vencieron en los
+// últimos 30, dentro del alcance del usuario.
+// ==========================================
+
+const obtenerAvisosVencimiento = async (req, res) => {
+  try {
+    const ahora = new Date();
+    await marcarCertificacionesVencidas(ahora);
+
+    const alcance = await filtroCertificaciones(req);
+
+    const consulta = (condicion, orden) =>
+      Certificacion.find({ $and: [condicion, alcance] })
+        .select("codigo tipoCertificacion estado fechaVencimiento lote certificador")
+        .populate({
+          path: "lote",
+          select: "codigo productor",
+          populate: { path: "productor", select: "nombre apellido" }
+        })
+        .populate("certificador", "nombre apellido")
+        .sort({ fechaVencimiento: orden })
+        .limit(50);
+
+    const resumir = (c) => ({
+      _id: c._id,
+      codigo: c.codigo,
+      tipoCertificacion: c.tipoCertificacion,
+      estado: c.estado,
+      fechaVencimiento: c.fechaVencimiento,
+      diasParaVencer: diasParaVencer(c.fechaVencimiento, ahora),
+      lote: c.lote
+        ? {
+          _id: c.lote._id,
+          codigo: c.lote.codigo,
+          productor: c.lote.productor
+            ? { nombre: c.lote.productor.nombre, apellido: c.lote.productor.apellido }
+            : null
+        }
+        : null,
+      certificador: c.certificador
+        ? { nombre: c.certificador.nombre, apellido: c.certificador.apellido }
+        : null
+    });
+
+    const [porVencer, vencidas] = await Promise.all([
+      consulta(filtroPorVencer(ahora), 1),
+      consulta({
+        estado: "vencida",
+        activo: true,
+        fechaVencimiento: { $gte: new Date(ahora.getTime() - DIAS_AVISO * 24 * 60 * 60 * 1000) }
+      }, -1)
+    ]);
+
+    return res.status(200).json({
+      dias: DIAS_AVISO,
+      porVencer: porVencer.map(resumir),
+      vencidas: vencidas.map(resumir)
+    });
+
+  } catch (error) {
+    console.error("Error al consultar los vencimientos:", error);
+    return res.status(500).json({ mensaje: "Error al consultar los vencimientos" });
+  }
+};
+
+
 module.exports = {
+
+  obtenerAvisosVencimiento,
 
   solicitarCertificacion,
 

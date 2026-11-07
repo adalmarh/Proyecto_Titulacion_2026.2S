@@ -7,6 +7,7 @@ const Certificacion = require(
   "../models/Certificacion"
 );
 const CodigoQR = require("../models/CodigoQR");
+const { marcarCertificacionesVencidas, filtroPorVencer } = require("../utils/vencimientos");
 
 const {
   ROLES,
@@ -59,6 +60,9 @@ const obtenerEstadisticasDashboard =
             }
           };
 
+
+      // Las aprobadas cuya fecha ya pasó cuentan como vencidas
+      await marcarCertificacionesVencidas();
 
       // ==========================================
       // CONTADORES PRINCIPALES
@@ -209,6 +213,9 @@ const obtenerEstadisticasDashboard =
           productoresActivos,
           totalEventos,
           certificacionesAprobadas,
+          certificacionesPorVencer: await Certificacion.countDocuments(
+            y(fCertificaciones, filtroPorVencer())
+          ),
           totalCodigosQR,
           totalEscaneos
         },

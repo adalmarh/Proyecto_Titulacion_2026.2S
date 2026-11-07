@@ -22,6 +22,7 @@ import {
 import api from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 import { PROVINCIAS_ECUADOR } from "../utils/formatos";
+import fondoLogin from "../assets/fondo-login.jpg";
 
 
 // ==========================================================
@@ -155,7 +156,7 @@ const SolicitarCuenta = () => {
 
 
   return (
-    <div className="login">
+    <div className="login login-con-fondo" style={{ "--fondo-login": `url(${fondoLogin})` }}>
 
       {/* PORTADA */}
       <section className="login-portada">

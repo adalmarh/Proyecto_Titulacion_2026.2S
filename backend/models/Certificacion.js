@@ -85,6 +85,26 @@ const certificacionSchema =
         cumplimientoRequisitos: {
           type: Boolean,
           default: false
+        },
+
+        // Análisis de calidad según la NTE INEN 176:2021
+        // (ver utils/normaInen176.js). El grado lo calcula
+        // el backend: 1, 2, 3 o null si no cumple.
+        analisisInen: {
+          norma: { type: String, trim: true },
+          humedad: Number,
+          peso100Granos: Number,
+          bienFermentados: Number,
+          violetas: Number,
+          pizarrosos: Number,
+          mohosos: Number,
+          defectuosos: Number,
+          materialRelacionado: Number,
+          materiaExtrana: Number,
+          sinHumo: Boolean,
+          sinInfestacion: Boolean,
+          grado: { type: Number, default: null },
+          fechaAnalisis: Date
         }
 
       },
@@ -247,80 +267,48 @@ certificacionSchema.pre(
     const año =
       new Date().getFullYear();
 
+    const Modelo =
+      mongoose.model("Certificacion");
 
-    // Buscar la última certificación
-    // creada.
 
-    const ultimaCertificacion =
-      await mongoose
-        .model("Certificacion")
+    // Se busca el número MÁS ALTO del año (ordenando por
+    // código), no la última certificación creada: si los
+    // datos se cargaron en otro orden, la última creada
+    // puede no tener el número mayor y el código nuevo
+    // saldría repetido (error de código duplicado).
+
+    const ultimaDelAño =
+      await Modelo
         .findOne({
-          codigo: {
-            $exists: true,
-            $ne: null,
-            $ne: ""
-          }
+          codigo: new RegExp(`^CERT-${año}-\\d{5}$`)
         })
-        .sort({
-          createdAt: -1
-        });
+        .sort({ codigo: -1 })
+        .select("codigo");
 
 
     let numero = 1;
 
+    if (ultimaDelAño?.codigo) {
+      const ultimoNumero =
+        parseInt(ultimaDelAño.codigo.split("-")[2], 10);
 
-    // ==================================================
-    // OBTENER NÚMERO DE LA ÚLTIMA CERTIFICACIÓN
-    // ==================================================
-
-    if (
-      ultimaCertificacion &&
-      ultimaCertificacion.codigo
-    ) {
-
-      const partes =
-        ultimaCertificacion.codigo
-          .split("-");
-
-
-      if (
-        partes.length === 3
-      ) {
-
-        const ultimoNumero =
-          parseInt(
-            partes[2],
-            10
-          );
-
-
-        if (
-          !isNaN(
-            ultimoNumero
-          )
-        ) {
-
-          numero =
-            ultimoNumero + 1;
-
-        }
-
+      if (!isNaN(ultimoNumero)) {
+        numero = ultimoNumero + 1;
       }
-
     }
 
 
-    // ==================================================
-    // CREAR CÓDIGO
-    // ==================================================
+    // Por seguridad, si el código ya existe se prueba
+    // con el siguiente.
 
-    this.codigo =
-      `CERT-${año}-${String(
-        numero
-      ).padStart(
-        5,
-        "0"
-      )}`;
+    const armar = (n) =>
+      `CERT-${año}-${String(n).padStart(5, "0")}`;
+
+    while (await Modelo.exists({ codigo: armar(numero) })) {
+      numero += 1;
+    }
+
+    this.codigo = armar(numero);
 
   }
 );

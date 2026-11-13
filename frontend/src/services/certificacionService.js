@@ -85,13 +85,15 @@ export const aprobarCertificacion = async (
 export const rechazarCertificacion = async (
   id,
   observaciones,
-  resultadoInspeccion
+  resultadoInspeccion,
+  analisisInen
 ) => {
   const respuesta = await api.patch(
     `/certificaciones/${id}/rechazar`,
     {
       observaciones,
-      resultadoInspeccion
+      resultadoInspeccion,
+      analisisInen
     }
   );
 

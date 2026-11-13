@@ -1685,3 +1685,375 @@
   }
 
 }
+
+
+/* ---------- Avance de la trazabilidad (gráficas por etapa) ---------- */
+
+.at {
+  margin-bottom: 20px;
+}
+
+.at-total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.1;
+}
+
+.at-total strong {
+  font-family: var(--fuente-titulos);
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.at-total span {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* Barra total: 5 tramos iguales separados por 2px */
+.at-barra-total {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2px;
+  height: 14px;
+  margin-bottom: 18px;
+}
+
+.at-tramo {
+  background: #eef0f3;
+  overflow: hidden;
+}
+
+.at-tramo:first-child { border-radius: 4px 0 0 4px; }
+.at-tramo:last-child { border-radius: 0 4px 4px 0; }
+
+.at-tramo > span,
+.at-barra > span {
+  display: block;
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.at-aviso {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fffaf0;
+  border: 1px solid #feebc8;
+  color: #7b341e;
+  font-size: 13px;
+}
+
+.at-aviso svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+
+.at-etapas {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 1150px) {
+  .at-etapas {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+.at-meta {
+  margin-top: 8px;
+}
+
+.at-etapa {
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.at-etapa.at-en_curso,
+.at-etapa.at-siguiente {
+  border-color: #94a3b8;
+  box-shadow: 0 0 0 1px #94a3b8;
+}
+
+.at-fila {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.at-numero {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.at-nombre {
+  font-weight: 600;
+  color: #111827;
+  font-size: 14px;
+}
+
+.at-porcentaje {
+  margin-left: auto;
+  font-weight: 700;
+  color: #111827;
+  font-variant-numeric: tabular-nums;
+}
+
+.at-situacion {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+.at-situacion-completa { background: #c6f6d5; color: #22543d; }
+.at-situacion-en_curso,
+.at-situacion-siguiente { background: #bee3f8; color: #2c5282; }
+.at-situacion-incompleta { background: #feebc8; color: #7b341e; }
+
+.at-barra {
+  height: 8px;
+  margin: 10px 0;
+  border-radius: 4px;
+  background: #eef0f3;
+  overflow: hidden;
+}
+
+.at-barra > span {
+  border-radius: 4px;
+}
+
+.at-actividades {
+  list-style: none;
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.at-actividades li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.at-actividades svg {
+  flex: none;
+  width: 15px;
+  height: 15px;
+}
+
+.at-hecha { color: #1f2937; }
+.at-hecha svg { color: #2f855a; }
+.at-falta { color: #6b7280; }
+.at-falta svg { color: #a0aec0; }
+
+.at-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.at-nota {
+  margin-top: 14px;
+}
+
+@media (max-width: 700px) {
+  .at .gs-panel-cabecera {
+    flex-wrap: wrap;
+  }
+
+  .at-total {
+    align-items: flex-start;
+  }
+}
+
+
+/* ---------- Análisis NTE INEN 176 (dictamen) ---------- */
+
+.inen {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px 14px 14px;
+  min-width: 0;
+}
+
+.inen legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+  font-weight: 700;
+  font-size: 14px;
+  color: #111827;
+}
+
+.inen legend svg {
+  width: 16px;
+  height: 16px;
+  color: #2f855a;
+}
+
+.inen-opcional {
+  font-weight: 400;
+  color: #6b7280;
+}
+
+.inen > .gs-ayuda a {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #2f855a;
+  font-weight: 600;
+}
+
+.inen > .gs-ayuda svg {
+  width: 12px;
+  height: 12px;
+}
+
+.inen-filas {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.inen-fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px 78px;
+  align-items: center;
+  gap: 8px;
+}
+
+.inen-fila label {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.inen-fila label .gs-ayuda {
+  font-weight: 400;
+  font-size: 11.5px;
+}
+
+.inen-valor {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.inen-valor input {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  text-align: right;
+}
+
+.inen-valor span {
+  width: 14px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.inen-grado {
+  justify-self: start;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+.inen-g1 { background: #c6f6d5; color: #22543d; }
+.inen-g2 { background: #bee3f8; color: #2c5282; }
+.inen-g3 { background: #feebc8; color: #7b341e; }
+.inen-g0 { background: #fed7d7; color: #822727; }
+
+.inen-casilla {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: #1f2937;
+}
+
+.inen-casilla input {
+  margin-top: 3px;
+}
+
+.inen-resultado {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  background: #f7fafc;
+  color: #4a5568;
+}
+
+.inen-resultado svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.inen-resultado-cumple { background: #f0fff4; color: #22543d; }
+.inen-resultado-no_cumple { background: #fff5f5; color: #822727; }
+
+
+/* ---------- Página pública de la norma ---------- */
+
+.nm-tabla-envoltura {
+  overflow-x: auto;
+  border-radius: 10px;
+}
+
+.pv-tabla.nm-tabla td:first-child {
+  width: auto;
+}
+
+.nm-tabla td,
+.nm-tabla th {
+  white-space: nowrap;
+}
+
+.nm-tabla td:last-child {
+  white-space: normal;
+  min-width: 170px;
+  color: #4a5568;
+}
+
+.nm-icono {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+}

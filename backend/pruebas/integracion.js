@@ -465,14 +465,28 @@ const ejecutarCasos = async () => {
   await caso("C09", "Rechazar sin indicar el motivo", "400", async () =>
     codigo(await http("PATCH", `/certificaciones/${D.C1._id}/rechazar`, { token: T.cert, body: {} }), 400));
 
-  await caso("C10", "El certificador aprueba con fecha de vencimiento", "200 · aprobada", async () => {
+  // Análisis de calidad según la NTE INEN 176:2021 (Grado 1)
+  const analisisInen = {
+    humedad: 6.5, peso100Granos: 135, bienFermentados: 80, violetas: 10, pizarrosos: 5,
+    mohosos: 0.5, defectuosos: 0.3, materialRelacionado: 0.5, materiaExtrana: 0.2,
+    sinHumo: true, sinInfestacion: true
+  };
+
+  await caso("N01", "Aprobar sin el análisis de la NTE INEN 176", "400", async () =>
+    codigo(await http("PATCH", `/certificaciones/${D.C1._id}/aprobar`, { token: T.cert, body: { resultadoInspeccion: "Cumple" } }), 400));
+
+  await caso("N02", "Aprobar con humedad de 8 % (la norma permite máx. 7 %)", "400", async () =>
+    codigo(await http("PATCH", `/certificaciones/${D.C1._id}/aprobar`, { token: T.cert, body: { analisisInen: { ...analisisInen, humedad: 8 } } }), 400));
+
+  await caso("C10", "El certificador aprueba con fecha de vencimiento y análisis INEN", "200 · aprobada · grado 1", async () => {
     const vence = new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString().slice(0, 10);
     const r = await http("PATCH", `/certificaciones/${D.C1._id}/aprobar`, {
       token: T.cert,
-      body: { fechaVencimiento: vence, resultadoInspeccion: "Cumple BPA", observaciones: "Sin observaciones" }
+      body: { fechaVencimiento: vence, resultadoInspeccion: "Cumple BPA", observaciones: "Sin observaciones", analisisInen }
     });
     const estado = r.datos?.certificacion?.estado;
-    return { ok: r.status === 200 && estado === "aprobada", obtenido: `${r.status} · ${estado}` };
+    const grado = r.datos?.certificacion?.datosCertificacion?.analisisInen?.grado;
+    return { ok: r.status === 200 && estado === "aprobada" && grado === 1, obtenido: `${r.status} · ${estado} · grado ${grado}` };
   });
 
   await caso("C11", "Descargar el certificado PDF de la aprobada", "200 · application/pdf", async () => {

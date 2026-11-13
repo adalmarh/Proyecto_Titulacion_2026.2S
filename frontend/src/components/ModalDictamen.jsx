@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
   LuCircleCheck,
   LuCircleX,
-  LuTriangleAlert
+  LuTriangleAlert,
+  LuFlaskConical,
+  LuExternalLink
 } from "react-icons/lu";
 
 import Modal from "./Modal";
@@ -11,12 +13,28 @@ import {
   aprobarCertificacion,
   rechazarCertificacion
 } from "../services/certificacionService";
+import {
+  NORMA,
+  PARAMETROS_INEN,
+  REQUISITOS_GENERALES_INEN,
+  textoLimite,
+  evaluarAnalisisInen,
+  analisisParaEnviar
+} from "../utils/normaInen176";
+
+const analisisVacio = {
+  ...Object.fromEntries(PARAMETROS_INEN.map((p) => [p.clave, ""])),
+  ...Object.fromEntries(REQUISITOS_GENERALES_INEN.map((r) => [r.clave, false]))
+};
+
+const TEXTO_GRADO = { 0: "No cumple", 1: "Grado 1", 2: "Grado 2", 3: "Grado 3" };
 
 
 // ==========================================
 // DICTAMEN DE UNA CERTIFICACIÓN
-// Aprobar (con fecha de vencimiento) o
-// rechazar (con motivo obligatorio).
+// Aprobar (con fecha de vencimiento y el
+// análisis de calidad según la NTE INEN 176)
+// o rechazar (con motivo obligatorio).
 // Lo usan el panel del certificador y la
 // página de Certificaciones.
 // ==========================================
@@ -51,10 +69,16 @@ const ModalDictamen = ({
   const [vencimiento, setVencimiento] = useState(unAnio());
   const [resultado, setResultado] = useState("");
   const [observaciones, setObservaciones] = useState("");
+  const [analisis, setAnalisis] = useState(analisisVacio);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
 
   const aprobar = dictamen === "aprobar";
+
+  const evaluacion = useMemo(() => evaluarAnalisisInen(analisis), [analisis]);
+
+  const cambiarAnalisis = (clave, valor) =>
+    setAnalisis((anterior) => ({ ...anterior, [clave]: valor }));
 
 
   const enviar = async (evento) => {
@@ -66,6 +90,15 @@ const ModalDictamen = ({
       return;
     }
 
+    if (aprobar && evaluacion.estado !== "cumple") {
+      setError(
+        evaluacion.estado === "incompleto"
+          ? "Completa el análisis de calidad según la NTE INEN 176 para poder aprobar."
+          : "Según la NTE INEN 176 el lote no cumple: registra el dictamen como rechazo."
+      );
+      return;
+    }
+
     try {
       setEnviando(true);
 
@@ -73,13 +106,16 @@ const ModalDictamen = ({
         await aprobarCertificacion(certificacion._id, {
           fechaVencimiento: vencimiento || undefined,
           observaciones: observaciones.trim() || undefined,
-          resultadoInspeccion: resultado.trim() || undefined
+          resultadoInspeccion: resultado.trim() || undefined,
+          analisisInen: analisisParaEnviar(analisis)
         });
       } else {
         await rechazarCertificacion(
           certificacion._id,
           observaciones.trim(),
-          resultado.trim() || undefined
+          resultado.trim() || undefined,
+          // al rechazar, el análisis se guarda solo si está completo
+          evaluacion.estado === "incompleto" ? undefined : analisisParaEnviar(analisis)
         );
       }
 
@@ -164,6 +200,72 @@ const ModalDictamen = ({
               </div>
             )}
 
+            {/* ANÁLISIS SEGÚN LA NTE INEN 176:2021 */}
+            <fieldset className="gs-campo-ancho inen">
+              <legend>
+                <LuFlaskConical aria-hidden="true" />
+                Análisis de calidad · {NORMA.codigo}
+                {!aprobar && <span className="inen-opcional"> (opcional)</span>}
+              </legend>
+              <p className="gs-ayuda">
+                Resultados de la muestra del lote (prueba de corte de 100 granos).
+                El grado se calcula con la Tabla 1 de la norma.{" "}
+                <a href="/normativa/inen-176" target="_blank" rel="noreferrer">
+                  Ver norma y parámetros <LuExternalLink aria-hidden="true" />
+                </a>
+              </p>
+
+              <div className="inen-filas">
+                {PARAMETROS_INEN.map((p, i) => {
+                  const grado = evaluacion.grados[i];
+                  return (
+                    <div className="inen-fila" key={p.clave}>
+                      <label htmlFor={`inen-${p.clave}`}>
+                        {p.nombre}
+                        <span className="gs-ayuda">G1: {textoLimite(p, 0)} · G3: {textoLimite(p, 2)}</span>
+                      </label>
+                      <div className="inen-valor">
+                        <input
+                          id={`inen-${p.clave}`}
+                          inputMode="decimal"
+                          value={analisis[p.clave]}
+                          onChange={(e) => cambiarAnalisis(p.clave, e.target.value)}
+                          aria-describedby={`inen-g-${p.clave}`}
+                        />
+                        <span>{p.unidad}</span>
+                      </div>
+                      <span id={`inen-g-${p.clave}`} className={`inen-grado inen-g${grado ?? "x"}`}>
+                        {grado === null ? "—" : TEXTO_GRADO[grado]}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {REQUISITOS_GENERALES_INEN.map((r) => (
+                <label className="inen-casilla" key={r.clave}>
+                  <input
+                    type="checkbox"
+                    checked={analisis[r.clave]}
+                    onChange={(e) => cambiarAnalisis(r.clave, e.target.checked)}
+                  />
+                  {r.nombre}
+                </label>
+              ))}
+
+              <div className={`inen-resultado inen-resultado-${evaluacion.estado}`} role="status">
+                {evaluacion.estado === "cumple" && (
+                  <><LuCircleCheck aria-hidden="true" /> Cumple la norma · <strong>Grado {evaluacion.grado}</strong></>
+                )}
+                {evaluacion.estado === "incompleto" && (
+                  <>Faltan {evaluacion.faltan} {evaluacion.faltan === 1 ? "valor" : "valores"} para calcular el grado</>
+                )}
+                {evaluacion.estado === "no_cumple" && (
+                  <><LuCircleX aria-hidden="true" /> No cumple: {evaluacion.motivos.join(", ")}</>
+                )}
+              </div>
+            </fieldset>
+
             <div className="gs-campo gs-campo-ancho">
               <label htmlFor="d-resultado">Resultado de la inspección</label>
               <input
@@ -207,7 +309,8 @@ const ModalDictamen = ({
             <button
               type="submit"
               className={`gs-btn ${aprobar ? "gs-btn-principal" : "gs-btn-rechazo"}`}
-              disabled={enviando}
+              disabled={enviando || (aprobar && evaluacion.estado !== "cumple")}
+              title={aprobar && evaluacion.estado !== "cumple" ? "Completa un análisis que cumpla la NTE INEN 176" : undefined}
             >
               {enviando
                 ? "Enviando..."

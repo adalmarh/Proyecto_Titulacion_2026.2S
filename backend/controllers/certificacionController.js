@@ -10,6 +10,11 @@ const Usuario =
 const crypto = require("crypto");
 const { datosEmpresa } = require("../utils/empresa");
 const {
+  ErrorAnalisis,
+  evaluarAnalisis,
+  analisisParaGuardar
+} = require("../utils/normaInen176");
+const {
   DIAS_AVISO,
   diasParaVencer,
   filtroPorVencer,
@@ -627,7 +632,8 @@ const aprobarCertificacion = async (
     const {
       fechaVencimiento,
       observaciones,
-      resultadoInspeccion
+      resultadoInspeccion,
+      analisisInen
     } = req.body || {};
 
 
@@ -700,8 +706,60 @@ const aprobarCertificacion = async (
 
 
     // ========================================
+    // FECHA DE VENCIMIENTO
+    // Debe ser una fecha válida y posterior a hoy;
+    // si no, la certificación nacería vencida
+    // ========================================
+
+    let fechaAprobada = null;
+
+    if (fechaVencimiento) {
+      fechaAprobada = new Date(fechaVencimiento);
+
+      if (Number.isNaN(fechaAprobada.getTime()) || fechaAprobada <= new Date()) {
+        return res.status(400).json({
+          mensaje: "La fecha de vencimiento debe ser posterior a hoy"
+        });
+      }
+    }
+
+
+    // ========================================
+    // ANÁLISIS SEGÚN LA NTE INEN 176:2021
+    // Es obligatorio para aprobar: justifica el
+    // certificado y define el grado del cacao.
+    // ========================================
+
+    let resultadoNorma;
+
+    try {
+      resultadoNorma = evaluarAnalisis(analisisInen);
+    } catch (errorAnalisis) {
+      if (errorAnalisis instanceof ErrorAnalisis) {
+        return res.status(400).json({ mensaje: errorAnalisis.message });
+      }
+      throw errorAnalisis;
+    }
+
+    if (!resultadoNorma.cumple) {
+      return res.status(400).json({
+        mensaje:
+          "El lote no cumple la NTE INEN 176:2021, no se puede aprobar. " +
+          "Registra el dictamen como rechazo. Motivo: " +
+          resultadoNorma.motivos.join("; "),
+        motivos: resultadoNorma.motivos
+      });
+    }
+
+
+    // ========================================
     // APROBAR
     // ========================================
+
+    certificacion.set(
+      "datosCertificacion.analisisInen",
+      analisisParaGuardar(analisisInen, resultadoNorma)
+    );
 
     certificacion.estado =
       "aprobada";
@@ -715,22 +773,8 @@ const aprobarCertificacion = async (
     }
 
 
-    if (
-      fechaVencimiento
-    ) {
-
-      const fecha = new Date(fechaVencimiento);
-
-      // Debe ser una fecha válida y posterior a hoy;
-      // si no, la certificación nacería vencida
-      if (Number.isNaN(fecha.getTime()) || fecha <= new Date()) {
-        return res.status(400).json({
-          mensaje: "La fecha de vencimiento debe ser posterior a hoy"
-        });
-      }
-
-      certificacion.fechaVencimiento = fecha;
-
+    if (fechaAprobada) {
+      certificacion.fechaVencimiento = fechaAprobada;
     }
 
 
@@ -837,7 +881,8 @@ const rechazarCertificacion = async (
 
     const {
       observaciones,
-      resultadoInspeccion
+      resultadoInspeccion,
+      analisisInen
     } = req.body || {};
 
 
@@ -952,6 +997,23 @@ const rechazarCertificacion = async (
         "datosCertificacion.resultadoInspeccion",
         String(resultadoInspeccion).trim()
       );
+    }
+
+    // Al rechazar, el análisis INEN es opcional; si se envía,
+    // se guarda como respaldo del rechazo.
+    if (analisisInen) {
+      try {
+        const resultadoNorma = evaluarAnalisis(analisisInen);
+        certificacion.set(
+          "datosCertificacion.analisisInen",
+          analisisParaGuardar(analisisInen, resultadoNorma)
+        );
+      } catch (errorAnalisis) {
+        if (errorAnalisis instanceof ErrorAnalisis) {
+          return res.status(400).json({ mensaje: errorAnalisis.message });
+        }
+        throw errorAnalisis;
+      }
     }
 
 
@@ -1122,7 +1184,8 @@ const descargarCertificadoPDF =
       await asegurarCodigoVerificacion(certificacion);
 
       const pdf = await generarCertificadoPDF(certificacion, {
-        urlVerificacion: urlVerificacion(certificacion)
+        urlVerificacion: urlVerificacion(certificacion),
+        urlNorma: urlNorma()
       });
 
       res.setHeader("Content-Type", "application/pdf");
@@ -1182,6 +1245,13 @@ async function asegurarCodigoVerificacion(certificacion) {
 function urlVerificacion(certificacion) {
   const base = (process.env.QR_FRONTEND_URL || "http://localhost:5173").replace(/\/+$/, "");
   return `${base}/verificar/${certificacion.codigoVerificacion}`;
+}
+
+// Página pública con la norma, las bases y los parámetros
+// usados para emitir el certificado
+function urlNorma() {
+  const base = (process.env.QR_FRONTEND_URL || "http://localhost:5173").replace(/\/+$/, "");
+  return `${base}/normativa/inen-176`;
 }
 
 
@@ -1403,6 +1473,13 @@ const verificarCertificadoPublico = async (req, res) => {
       },
       productor: persona(lote.productor),
       empresa: datosEmpresa(),
+      // Norma y grado (sin los valores del análisis)
+      norma: certificacion.datosCertificacion?.analisisInen?.grado
+        ? {
+          codigo: certificacion.datosCertificacion.analisisInen.norma,
+          grado: certificacion.datosCertificacion.analisisInen.grado
+        }
+        : null,
       firma: certificacion.firma?.firmada
         ? {
           firmada: true,

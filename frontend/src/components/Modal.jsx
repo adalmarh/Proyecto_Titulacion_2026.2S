@@ -22,18 +22,31 @@ const Modal = ({
 
   const caja = useRef(null);
 
+  // Siempre la versión más reciente de onCerrar y bloqueado,
+  // sin volver a ejecutar los efectos en cada tecla.
+  const cerrarRef = useRef(onCerrar);
+  const bloqueadoRef = useRef(bloqueado);
+  cerrarRef.current = onCerrar;
+  bloqueadoRef.current = bloqueado;
+
+  // El foco va a la ventana SOLO al abrirse. (Antes se hacía en
+  // cada redibujado, y al escribir en un campo la ventana le
+  // quitaba el foco después de cada letra.)
   useEffect(() => {
     caja.current?.focus();
+  }, []);
 
+  // Cerrar con la tecla Esc
+  useEffect(() => {
     const alPresionar = (evento) => {
-      if (evento.key === "Escape" && !bloqueado) {
-        onCerrar();
+      if (evento.key === "Escape" && !bloqueadoRef.current) {
+        cerrarRef.current();
       }
     };
 
     window.addEventListener("keydown", alPresionar);
     return () => window.removeEventListener("keydown", alPresionar);
-  }, [onCerrar, bloqueado]);
+  }, []);
 
 
   return (

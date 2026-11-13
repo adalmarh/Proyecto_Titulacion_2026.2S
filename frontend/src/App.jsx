@@ -34,6 +34,7 @@ import SolicitarCuenta from "./pages/SolicitarCuenta";
 import Solicitudes from "./pages/Solicitudes";
 import MiPerfil from "./pages/MiPerfil";
 import Privacidad from "./pages/Privacidad";
+import NormaInen176 from "./pages/NormaInen176";
 import VerificarCertificado from "./pages/VerificarCertificado";
 import AceptarPrivacidad from "./components/AceptarPrivacidad";
 
@@ -214,6 +215,13 @@ const App = () => {
         <Route
           path="/privacidad"
           element={<Privacidad />}
+        />
+
+
+        {/* NORMA INEN 176 EN QUE SE BASA EL CERTIFICADO (público, enlace del PDF) */}
+        <Route
+          path="/normativa/inen-176"
+          element={<NormaInen176 />}
         />
 
 

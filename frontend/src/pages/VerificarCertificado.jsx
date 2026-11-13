@@ -132,6 +132,15 @@ const VerificarCertificado = () => {
                 <dd>{nombre(datos.productor)}</dd>
                 <dt>Empresa</dt>
                 <dd>{datos.empresa?.nombre || "—"}</dd>
+                {datos.norma && (
+                  <>
+                    <dt>Norma</dt>
+                    <dd>
+                      {datos.norma.codigo} · <strong>Grado {datos.norma.grado}</strong>{" "}
+                      (<Link to="/normativa/inen-176">ver parámetros</Link>)
+                    </dd>
+                  </>
+                )}
                 <dt>Emitido</dt>
                 <dd>{formatearFecha(datos.fechaEmision)}</dd>
                 <dt>Certificador</dt>

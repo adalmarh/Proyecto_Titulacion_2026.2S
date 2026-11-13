@@ -24,6 +24,7 @@ import {
   nombreCompleto
 } from "../utils/formatos";
 import { iconoEvento } from "../utils/iconos";
+import AvanceTrazabilidad from "../components/AvanceTrazabilidad";
 
 
 const NOMBRE_ROL = {
@@ -113,6 +114,7 @@ const Trazabilidad = () => {
     setMensaje("");
     setError("");
     setFormulario(formularioVacio);
+    setEventos([]);
     cargarEventos(id);
   };
 
@@ -381,6 +383,10 @@ const Trazabilidad = () => {
           </div>
         </div>
       </section>
+
+
+      {/* GRÁFICAS DE AVANCE POR ETAPA */}
+      {loteId && <AvanceTrazabilidad eventos={eventos} />}
 
 
       {!loteId ? (

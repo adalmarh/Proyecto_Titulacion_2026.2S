@@ -23,6 +23,7 @@
 //   node scripts/copiarBaseDatos.js --confirmar
 // ==========================================================
 
+const dns = require("dns");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 
@@ -36,6 +37,30 @@ const LIMITE_ATLAS_MB = 512;
 const ocultar = (uri) => String(uri).replace(/\/\/[^@]*@/, "//***:***@");
 
 
+// Las cadenas «mongodb+srv://» de Atlas necesitan una consulta
+// DNS de tipo SRV. Algunas redes (y Node en Windows) la rechazan
+// con «querySrv ECONNREFUSED». En ese caso se usa el DNS público
+// de Google y Cloudflare solo para este script.
+const prepararDns = async (uri) => {
+  if (!String(uri).startsWith("mongodb+srv://")) return;
+
+  const host = new URL(uri.replace("mongodb+srv://", "https://")).hostname;
+
+  try {
+    await dns.promises.resolveSrv(`_mongodb._tcp.${host}`);
+  } catch {
+    console.log("El DNS de tu red no encontró el servidor de Atlas; se usa el DNS público (8.8.8.8 y 1.1.1.1).\n");
+    dns.setServers(["8.8.8.8", "1.1.1.1"]);
+    await dns.promises.resolveSrv(`_mongodb._tcp.${host}`).catch(() => {
+      throw new Error(
+        "Tampoco se pudo con el DNS público. Tu red bloquea esa consulta: " +
+        "usa la cadena de conexión sin «+srv» (ver la guía del despliegue)."
+      );
+    });
+  }
+};
+
+
 const main = async () => {
   const origenUri = process.env.MONGO_URI;
   const destinoUri = process.env.MONGO_URI_DESTINO;
@@ -47,6 +72,8 @@ const main = async () => {
   console.log(CONFIRMAR ? "\nMODO: COPIAR\n" : "\nMODO: SOLO REVISAR (no se copia nada)\n");
   console.log(`Origen : ${ocultar(origenUri)}`);
   console.log(`Destino: ${ocultar(destinoUri)}\n`);
+
+  await prepararDns(destinoUri);
 
   const origen = await mongoose.createConnection(origenUri).asPromise();
   const destino = await mongoose.createConnection(destinoUri).asPromise();

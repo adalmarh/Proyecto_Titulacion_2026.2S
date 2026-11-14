@@ -1,0 +1,66 @@
+# ==========================================================
+# DESPLIEGUE DE RUTACACAO EN RENDER (Blueprint)
+# ----------------------------------------------------------
+# Crea dos servicios gratuitos desde este repositorio:
+#   1. rutacacao-api : el backend (Node + Express)
+#   2. rutacacao     : el frontend (React + Vite, sitio estático)
+# La base de datos está en MongoDB Atlas (MONGO_URI).
+#
+# Los valores marcados con «sync: false» se escriben en el
+# panel de Render al crear el Blueprint; NUNCA se suben al
+# repositorio. JWT_SECRET lo genera Render.
+# ==========================================================
+
+services:
+
+  # ---------------- BACKEND ----------------
+  - type: web
+    name: rutacacao-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/salud
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "1"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGO_URI
+        sync: false
+      # Dirección del frontend publicado, p. ej. https://rutacacao.onrender.com
+      - key: CORS_ORIGINS
+        sync: false
+      # La misma dirección: la usan los QR y el enlace del certificado PDF
+      - key: QR_FRONTEND_URL
+        sync: false
+      - key: EMPRESA_NOMBRE
+        sync: false
+      - key: EMPRESA_RUC
+        sync: false
+      - key: EMPRESA_CIUDAD
+        sync: false
+
+  # ---------------- FRONTEND ----------------
+  - type: web
+    name: rutacacao
+    runtime: static
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: ./frontend/dist
+    # React Router: todas las rutas (/verificar/..., /publico/qr/...,
+    # /normativa/...) se sirven con index.html
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      # Dirección del backend + /api, p. ej. https://rutacacao-api.onrender.com/api
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_PRIVACIDAD_RESPONSABLE
+        sync: false
+      - key: VITE_PRIVACIDAD_CORREO
+        sync: false

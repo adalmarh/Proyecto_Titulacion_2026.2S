@@ -36,6 +36,25 @@ const generarUrlPublica = (token) => {
 
 
 // ======================================================
+// URL VIGENTE DE UN QR YA CREADO
+// La dirección se arma siempre con QR_FRONTEND_URL. Si el
+// QR se creó con otra dirección (por ejemplo, localhost
+// antes de publicar el sistema), se corrige y se guarda.
+// ======================================================
+
+const urlVigente = async (codigoQR) => {
+  const url = generarUrlPublica(codigoQR.token);
+
+  if (codigoQR.urlPublica !== url) {
+    await CodigoQR.updateOne({ _id: codigoQR._id }, { $set: { urlPublica: url } });
+    codigoQR.urlPublica = url;
+  }
+
+  return url;
+};
+
+
+// ======================================================
 // GENERAR CÓDIGO QR
 // ======================================================
 
@@ -92,7 +111,7 @@ const generarCodigoQR = async (
 
       const imagen =
         await QRCode.toDataURL(
-          codigoExistente.urlPublica
+          await urlVigente(codigoExistente)
         );
 
 
@@ -279,7 +298,7 @@ const obtenerCodigoQRPorLote =
 
       const imagen =
         await QRCode.toDataURL(
-          codigoQR.urlPublica
+          await urlVigente(codigoQR)
         );
 
 

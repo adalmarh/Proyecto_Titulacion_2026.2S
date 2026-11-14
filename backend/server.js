@@ -1,6 +1,11 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const mongoose = require("mongoose");
+const {
+  origenesPermitidos,
+  ocultarErroresInternos
+} = require("./middleware/produccionMiddleware");
 
 dotenv.config();
 
@@ -85,8 +90,14 @@ if (process.env.TRUST_PROXY) {
 // MIDDLEWARES
 // ==========================================
 
+// CORS: solo la dirección del frontend publicado (CORS_ORIGINS)
 app.use(
-  cors()
+  cors(origenesPermitidos())
+);
+
+// En producción, los errores 500 no envían detalles técnicos
+app.use(
+  ocultarErroresInternos
 );
 
 app.use(
@@ -104,6 +115,25 @@ app.get(
     res.status(200).json({
       mensaje:
         "API del Sistema Web de Trazabilidad y Certificación de Lotes Agrícolas funcionando correctamente"
+    });
+  }
+);
+
+
+// ==========================================
+// SALUD DEL SERVIDOR
+// La usan Render (para saber si el servicio
+// está listo) y el ping que evita que el
+// servidor gratuito se duerma.
+// ==========================================
+
+app.get(
+  "/api/salud",
+  (req, res) => {
+    const conectada = mongoose.connection.readyState === 1;
+    res.status(conectada ? 200 : 503).json({
+      estado: conectada ? "ok" : "sin base de datos",
+      hora: new Date().toISOString()
     });
   }
 );

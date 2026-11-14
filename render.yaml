@@ -18,6 +18,8 @@ services:
     name: rutacacao-api
     runtime: node
     plan: free
+    # Misma zona que la base de Atlas (AWS N. Virginia, us-east-1)
+    region: virginia
     rootDir: backend
     buildCommand: npm ci
     startCommand: npm start

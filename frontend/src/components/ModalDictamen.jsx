@@ -5,13 +5,15 @@ import {
   LuCircleX,
   LuTriangleAlert,
   LuFlaskConical,
-  LuExternalLink
+  LuExternalLink,
+  LuSparkles
 } from "react-icons/lu";
 
 import Modal from "./Modal";
 import {
   aprobarCertificacion,
-  rechazarCertificacion
+  rechazarCertificacion,
+  sugerirDictamenIA
 } from "../services/certificacionService";
 import {
   NORMA,
@@ -71,6 +73,12 @@ const ModalDictamen = ({
   const [observaciones, setObservaciones] = useState("");
   const [analisis, setAnalisis] = useState(analisisVacio);
   const [enviando, setEnviando] = useState(false);
+
+  // Asistente de IA: solo PROPONE la redacción; el certificador decide
+  const [sugerencia, setSugerencia] = useState(null);
+  const [pidiendoIA, setPidiendoIA] = useState(false);
+  const [errorIA, setErrorIA] = useState("");
+  const [usoIA, setUsoIA] = useState(false);
   const [error, setError] = useState("");
 
   const aprobar = dictamen === "aprobar";
@@ -80,6 +88,27 @@ const ModalDictamen = ({
   const cambiarAnalisis = (clave, valor) =>
     setAnalisis((anterior) => ({ ...anterior, [clave]: valor }));
 
+
+  const pedirSugerencia = async () => {
+    setErrorIA("");
+    setSugerencia(null);
+    try {
+      setPidiendoIA(true);
+      const datos = await sugerirDictamenIA(certificacion._id, analisisParaEnviar(analisis), dictamen);
+      setSugerencia(datos);
+    } catch (err) {
+      setErrorIA(err.response?.data?.mensaje || "No se pudo obtener la sugerencia de la IA.");
+    } finally {
+      setPidiendoIA(false);
+    }
+  };
+
+  const usarSugerencia = () => {
+    setResultado(sugerencia.resultado);
+    setObservaciones(sugerencia.observaciones);
+    setUsoIA(true);
+    setSugerencia(null);
+  };
 
   const enviar = async (evento) => {
     evento.preventDefault();
@@ -107,7 +136,8 @@ const ModalDictamen = ({
           fechaVencimiento: vencimiento || undefined,
           observaciones: observaciones.trim() || undefined,
           resultadoInspeccion: resultado.trim() || undefined,
-          analisisInen: analisisParaEnviar(analisis)
+          analisisInen: analisisParaEnviar(analisis),
+          redaccionIA: usoIA
         });
       } else {
         await rechazarCertificacion(
@@ -115,7 +145,8 @@ const ModalDictamen = ({
           observaciones.trim(),
           resultado.trim() || undefined,
           // al rechazar, el análisis se guarda solo si está completo
-          evaluacion.estado === "incompleto" ? undefined : analisisParaEnviar(analisis)
+          evaluacion.estado === "incompleto" ? undefined : analisisParaEnviar(analisis),
+          usoIA
         );
       }
 
@@ -265,6 +296,58 @@ const ModalDictamen = ({
                 )}
               </div>
             </fieldset>
+
+            {/* ASISTENTE DE IA: propone la redacción, no decide */}
+            <div className="gs-campo-ancho ia">
+              <div className="ia-cabecera">
+                <button
+                  type="button"
+                  className="gs-btn gs-btn-secundario ia-boton"
+                  onClick={pedirSugerencia}
+                  disabled={pidiendoIA || enviando || evaluacion.estado === "incompleto"}
+                  title={evaluacion.estado === "incompleto" ? "Completa el análisis para pedir una sugerencia" : undefined}
+                >
+                  <LuSparkles aria-hidden="true" />
+                  {pidiendoIA ? "La IA está redactando..." : "Sugerir redacción con IA"}
+                </button>
+                <span className="gs-ayuda">
+                  {evaluacion.estado === "incompleto"
+                    ? "Completa el análisis para usar el asistente."
+                    : "Propone el resultado y las observaciones. El grado lo calcula la norma, no la IA."}
+                </span>
+              </div>
+
+              {errorIA && <p className="ia-error" role="alert">{errorIA}</p>}
+
+              {sugerencia && (
+                <div className="ia-propuesta" role="region" aria-label="Propuesta de la IA">
+                  <p className="ia-aviso">
+                    <LuSparkles aria-hidden="true" />
+                    {sugerencia.aviso}
+                  </p>
+                  <dl>
+                    <dt>Resultado de la inspección</dt>
+                    <dd>{sugerencia.resultado}</dd>
+                    <dt>Observaciones</dt>
+                    <dd>{sugerencia.observaciones}</dd>
+                  </dl>
+                  <div className="ia-acciones">
+                    <button type="button" className="gs-btn gs-btn-principal" onClick={usarSugerencia}>
+                      Usar y editar
+                    </button>
+                    <button type="button" className="gs-btn gs-btn-secundario" onClick={() => setSugerencia(null)}>
+                      Descartar
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {usoIA && !sugerencia && (
+                <p className="gs-ayuda ia-usada">
+                  Texto propuesto por la IA: revísalo y corrígelo antes de enviar. El certificado indicará que la redacción se apoyó en IA.
+                </p>
+              )}
+            </div>
 
             <div className="gs-campo gs-campo-ancho">
               <label htmlFor="d-resultado">Resultado de la inspección</label>

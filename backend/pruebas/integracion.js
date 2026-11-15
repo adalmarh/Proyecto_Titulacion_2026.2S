@@ -472,6 +472,12 @@ const ejecutarCasos = async () => {
     sinHumo: true, sinInfestacion: true
   };
 
+  await caso("IA01", "Sugerencia con IA con una decisión inválida", "400", async () =>
+    codigo(await http("POST", `/certificaciones/${D.C1._id}/sugerencia-ia`, { token: T.cert, body: { decision: "quizas", analisisInen } }), 400));
+
+  await caso("IA02", "El productor no puede pedir la sugerencia con IA", "403", async () =>
+    codigo(await http("POST", `/certificaciones/${D.C1._id}/sugerencia-ia`, { token: T.prod, body: { decision: "aprobar", analisisInen } }), 403));
+
   await caso("N01", "Aprobar sin el análisis de la NTE INEN 176", "400", async () =>
     codigo(await http("PATCH", `/certificaciones/${D.C1._id}/aprobar`, { token: T.cert, body: { resultadoInspeccion: "Cumple" } }), 400));
 

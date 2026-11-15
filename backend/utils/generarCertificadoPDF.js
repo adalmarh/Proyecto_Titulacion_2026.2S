@@ -184,7 +184,7 @@ const generarCertificadoPDF = async (certificacion, { urlVerificacion, urlNorma 
   if (certificacion.observaciones) {
     y += 14;
     doc.fillColor(COLOR.gris).font("Helvetica").fontSize(9.5)
-      .text("Observaciones", X, y);
+      .text(conAnalisis ? "Observaciones (texto completo en el anexo técnico)" : "Observaciones", X, y);
     doc.fillColor(COLOR.texto).fontSize(10)
       .text(certificacion.observaciones, X, y + 14, { width: ANCHO_UTIL, height: 42, ellipsis: true });
   }
@@ -342,7 +342,30 @@ const generarCertificadoPDF = async (certificacion, { urlVerificacion, urlNorma 
         "y se cumplen los requisitos generales de la norma.",
         X + 14, ay + 27, { width: ANCHO_UTIL - 28 }
       );
-    ay += 66;
+    ay += 62;
+
+    // Observaciones completas (en la primera página se resumen)
+    if (certificacion.observaciones) {
+      doc.fillColor(COLOR.verdeOscuro).font("Helvetica-Bold").fontSize(10)
+        .text("Observaciones del certificador", X, ay);
+      ay += 14;
+      doc.fillColor(COLOR.texto).font("Helvetica").fontSize(9)
+        .text(certificacion.observaciones, X, ay, { width: ANCHO_UTIL, height: 80, ellipsis: true, lineGap: 1.5, align: "justify" });
+      ay = Math.min(doc.y, ay + 80) + 10;
+    }
+
+    // Transparencia sobre el uso de inteligencia artificial
+    if (certificacion.datosCertificacion?.redaccionAsistidaIA) {
+      doc.fillColor(COLOR.gris).font("Helvetica-Oblique").fontSize(8)
+        .text(
+          "La redacción del resultado y de las observaciones se apoyó en un asistente de inteligencia artificial " +
+          "y fue revisada por el certificador. El grado lo calcula el sistema con la norma, no la IA.",
+          X, ay, { width: ANCHO_UTIL }
+        );
+      ay = doc.y + 12;
+    } else {
+      ay += 4;
+    }
 
     // Enlaces a la norma y a los parámetros
     doc.fillColor(COLOR.verdeOscuro).font("Helvetica-Bold").fontSize(10)

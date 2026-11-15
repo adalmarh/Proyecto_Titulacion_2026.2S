@@ -9,6 +9,7 @@ const {
   asignarCertificador,
   aprobarCertificacion,
   rechazarCertificacion,
+  sugerirDictamenIA,
   descargarCertificadoPDF,
   subirCertificadoFirmado
 } = require(
@@ -120,6 +121,23 @@ router.patch(
   ),
   accesoCertificacion(),
   aprobarCertificacion
+);
+
+// ==========================================
+// SUGERENCIA DE REDACCIÓN CON IA
+// Solo propone textos; no guarda nada.
+// Mismos permisos que aprobar y rechazar.
+// ==========================================
+
+router.post(
+  "/:id/sugerencia-ia",
+  protegerRuta,
+  permitirRoles(
+    "administrador",
+    "certificador"
+  ),
+  accesoCertificacion(),
+  sugerirDictamenIA
 );
 
 router.patch(

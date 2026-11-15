@@ -105,6 +105,13 @@ const certificacionSchema =
           sinInfestacion: Boolean,
           grado: { type: Number, default: null },
           fechaAnalisis: Date
+        },
+
+        // true si el certificador usó la propuesta del
+        // asistente de IA para redactar el dictamen
+        redaccionAsistidaIA: {
+          type: Boolean,
+          default: false
         }
 
       },

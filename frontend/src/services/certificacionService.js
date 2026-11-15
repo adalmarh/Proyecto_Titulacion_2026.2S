@@ -86,14 +86,16 @@ export const rechazarCertificacion = async (
   id,
   observaciones,
   resultadoInspeccion,
-  analisisInen
+  analisisInen,
+  redaccionIA
 ) => {
   const respuesta = await api.patch(
     `/certificaciones/${id}/rechazar`,
     {
       observaciones,
       resultadoInspeccion,
-      analisisInen
+      analisisInen,
+      redaccionIA
     }
   );
 
@@ -149,6 +151,25 @@ export const subirCertificadoFirmado = async (id, archivo) => {
       headers: { "Content-Type": "application/pdf" },
       params: { confirmo: "si" }
     }
+  );
+
+  return respuesta.data;
+};
+
+
+// ==========================================
+// SUGERENCIA DE REDACCIÓN CON IA
+// Devuelve { resultado, observaciones, grado,
+// modelo, aviso }. No guarda nada.
+// ==========================================
+export const sugerirDictamenIA = async (
+  id,
+  analisisInen,
+  decision
+) => {
+  const respuesta = await api.post(
+    `/certificaciones/${id}/sugerencia-ia`,
+    { analisisInen, decision }
   );
 
   return respuesta.data;

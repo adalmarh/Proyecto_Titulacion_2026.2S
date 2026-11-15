@@ -15,6 +15,10 @@ const {
   analisisParaGuardar
 } = require("../utils/normaInen176");
 const {
+  ErrorIA,
+  sugerirDictamen
+} = require("../utils/asistenteIA");
+const {
   DIAS_AVISO,
   diasParaVencer,
   filtroPorVencer,
@@ -633,7 +637,8 @@ const aprobarCertificacion = async (
       fechaVencimiento,
       observaciones,
       resultadoInspeccion,
-      analisisInen
+      analisisInen,
+      redaccionIA
     } = req.body || {};
 
 
@@ -761,6 +766,12 @@ const aprobarCertificacion = async (
       analisisParaGuardar(analisisInen, resultadoNorma)
     );
 
+    // Transparencia: la redacción se apoyó en la IA
+    certificacion.set(
+      "datosCertificacion.redaccionAsistidaIA",
+      redaccionIA === true
+    );
+
     certificacion.estado =
       "aprobada";
 
@@ -882,7 +893,8 @@ const rechazarCertificacion = async (
     const {
       observaciones,
       resultadoInspeccion,
-      analisisInen
+      analisisInen,
+      redaccionIA
     } = req.body || {};
 
 
@@ -998,6 +1010,11 @@ const rechazarCertificacion = async (
         String(resultadoInspeccion).trim()
       );
     }
+
+    certificacion.set(
+      "datosCertificacion.redaccionAsistidaIA",
+      redaccionIA === true
+    );
 
     // Al rechazar, el análisis INEN es opcional; si se envía,
     // se guarda como respaldo del rechazo.
@@ -1573,7 +1590,104 @@ const obtenerAvisosVencimiento = async (req, res) => {
 };
 
 
+// ==========================================================
+// SUGERIR LA REDACCIÓN DEL DICTAMEN CON IA
+// POST /api/certificaciones/:id/sugerencia-ia
+// Body: { analisisInen, decision: "aprobar" | "rechazar" }
+//
+// Solo propone textos; no guarda nada. El grado lo calcula
+// la norma (no la IA) y la decisión es del certificador.
+// A la IA solo se envían datos técnicos del análisis.
+// ==========================================================
+
+// Límite por usuario para cuidar el cupo gratuito
+const CONSULTAS_IA_POR_HORA = Number(process.env.IA_CONSULTAS_POR_HORA) || 15;
+const consultasIA = new Map();
+
+const puedeConsultarIA = (idUsuario) => {
+  const ahora = Date.now();
+  const recientes = (consultasIA.get(idUsuario) || []).filter((t) => ahora - t < 3600000);
+  if (recientes.length >= CONSULTAS_IA_POR_HORA) {
+    consultasIA.set(idUsuario, recientes);
+    return false;
+  }
+  recientes.push(ahora);
+  consultasIA.set(idUsuario, recientes);
+  return true;
+};
+
+const sugerirDictamenIA = async (req, res) => {
+  try {
+    const { analisisInen, decision } = req.body || {};
+
+    if (!["aprobar", "rechazar"].includes(decision)) {
+      return res.status(400).json({ mensaje: "Indica si el dictamen es aprobar o rechazar" });
+    }
+
+    const certificacion = await Certificacion.findById(req.params.id);
+
+    if (!certificacion) {
+      return res.status(404).json({ mensaje: "La certificación no existe" });
+    }
+
+    if (
+      req.usuario.rol === "certificador" &&
+      (!certificacion.certificador ||
+        certificacion.certificador.toString() !== req.usuario._id.toString())
+    ) {
+      return res.status(403).json({ mensaje: "No tienes permiso para dictaminar esta certificación" });
+    }
+
+    if (certificacion.estado !== "en_revision") {
+      return res.status(400).json({ mensaje: "Solo se puede redactar el dictamen de certificaciones en revisión" });
+    }
+
+    // El grado lo decide la norma, antes de consultar a la IA
+    let evaluacion;
+    try {
+      evaluacion = evaluarAnalisis(analisisInen);
+    } catch (errorAnalisis) {
+      if (errorAnalisis instanceof ErrorAnalisis) {
+        return res.status(400).json({ mensaje: `Completa el análisis antes de pedir la sugerencia: ${errorAnalisis.message}` });
+      }
+      throw errorAnalisis;
+    }
+
+    if (!puedeConsultarIA(String(req.usuario._id))) {
+      return res.status(429).json({
+        mensaje: `Llegaste al límite de ${CONSULTAS_IA_POR_HORA} sugerencias por hora. Intenta más tarde o redacta el dictamen a mano.`
+      });
+    }
+
+    const lote = await Lote.findById(certificacion.lote).select("estadoGrano");
+
+    const sugerencia = await sugerirDictamen({
+      evaluacion,
+      decision,
+      tipoCertificacion: certificacion.tipoCertificacion,
+      estadoGrano: lote?.estadoGrano
+    });
+
+    return res.json({
+      ...sugerencia,
+      grado: evaluacion.grado,
+      cumple: evaluacion.cumple,
+      aviso: "Propuesta generada por IA. Revísala y corrígela antes de usarla."
+    });
+
+  } catch (error) {
+    if (error instanceof ErrorIA) {
+      return res.status(error.estado).json({ mensaje: error.message });
+    }
+    console.error("Error al sugerir el dictamen con IA:", error);
+    return res.status(500).json({ mensaje: "Error al sugerir el dictamen con IA", error: error.message });
+  }
+};
+
+
 module.exports = {
+
+  sugerirDictamenIA,
 
   obtenerAvisosVencimiento,
 

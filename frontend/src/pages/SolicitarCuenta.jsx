@@ -16,12 +16,15 @@ import {
   LuLogIn,
   LuArrowLeft,
   LuMapPin,
-  LuMap
+  LuMap,
+  LuScale,
+  LuCalendar,
+  LuCalendarClock
 } from "react-icons/lu";
 
 import api from "../services/api";
 import { AuthContext } from "../context/AuthContext";
-import { PROVINCIAS_ECUADOR } from "../utils/formatos";
+import { PROVINCIAS_ECUADOR, UNIDADES_ENTRADA, KG_POR_QUINTAL, numeroEC } from "../utils/formatos";
 import fondoLogin from "../assets/fondo-login.jpg";
 
 
@@ -42,6 +45,10 @@ const formularioVacio = {
   canton: "",
   parroquia: "",
   direccion: "",
+  cantidadEstimada: "",
+  unidadEstimada: "quintales",
+  fechaSiembra: "",
+  fechaEstimadaCosecha: "",
   email: "",
   password: "",
   confirmar: "",
@@ -72,6 +79,17 @@ const SolicitarCuenta = () => {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
   const [enviada, setEnviada] = useState(false);
+
+  // Fecha de hoy (AAAA-MM-DD) para limitar la fecha de siembra
+  const hoy = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+
+  // Ayuda bajo la cantidad: la equivalencia en la otra unidad
+  const cantidadNumero = Number(String(formulario.cantidadEstimada).replace(",", "."));
+  const equivalencia = cantidadNumero > 0
+    ? (formulario.unidadEstimada === "quintales"
+      ? `Equivale a ${numeroEC(cantidadNumero * KG_POR_QUINTAL)} kg`
+      : `Equivale a ≈ ${numeroEC(cantidadNumero / KG_POR_QUINTAL, 1)} quintales`)
+    : undefined;
 
   useEffect(() => {
     api.get("/public/empresa")
@@ -107,6 +125,17 @@ const SolicitarCuenta = () => {
       return;
     }
 
+    if (!(Number(String(formulario.cantidadEstimada).replace(",", ".")) > 0)) {
+      setError("Indica la cantidad aproximada de cacao que da tu cosecha.");
+      return;
+    }
+
+    if (formulario.fechaSiembra && formulario.fechaEstimadaCosecha &&
+        formulario.fechaEstimadaCosecha <= formulario.fechaSiembra) {
+      setError("La fecha estimada de cosecha debe ser posterior a la fecha de siembra.");
+      return;
+    }
+
     if (formulario.password.length < 6) {
       setError("La contraseña debe tener al menos 6 caracteres.");
       return;
@@ -135,6 +164,10 @@ const SolicitarCuenta = () => {
         canton: formulario.canton,
         parroquia: formulario.parroquia,
         direccion: formulario.direccion,
+        cantidadEstimada: formulario.cantidadEstimada,
+        unidadEstimada: formulario.unidadEstimada,
+        fechaSiembra: formulario.fechaSiembra,
+        fechaEstimadaCosecha: formulario.fechaEstimadaCosecha,
         email: formulario.email,
         password: formulario.password,
         mensaje: formulario.mensaje,
@@ -334,6 +367,65 @@ const SolicitarCuenta = () => {
                       value={formulario.direccion}
                       onChange={cambiar}
                       placeholder="Ej.: Finca La Ceiba, km 5 vía a Naranjito, junto a la escuela"
+                      required
+                    />
+                  </Campo>
+
+                  {/* PRODUCCIÓN ESTIMADA: llena sola la cantidad y las fechas de sus lotes */}
+                  <p className="registro-subtitulo registro-ancho">
+                    Tu producción de cacao
+                    <span>Un valor aproximado está bien: la empresa lo confirma al registrar cada lote.</span>
+                  </p>
+
+                  <Campo
+                    id="s-cantidad"
+                    etiqueta="Cantidad aproximada por cosecha *"
+                    icono={LuScale}
+                    ayuda={equivalencia}
+                  >
+                    <input
+                      id="s-cantidad"
+                      name="cantidadEstimada"
+                      type="number"
+                      inputMode="decimal"
+                      min="0.01"
+                      step="any"
+                      value={formulario.cantidadEstimada}
+                      onChange={cambiar}
+                      placeholder="Ej.: 20"
+                      required
+                    />
+                  </Campo>
+
+                  <Campo id="s-unidad" etiqueta="Unidad *" icono={LuScale}>
+                    <select id="s-unidad" name="unidadEstimada" value={formulario.unidadEstimada} onChange={cambiar} required>
+                      {UNIDADES_ENTRADA.map((u) => (
+                        <option key={u.valor} value={u.valor}>{u.texto}</option>
+                      ))}
+                    </select>
+                  </Campo>
+
+                  <Campo id="s-siembra" etiqueta="Fecha de siembra del cacaotal *" icono={LuCalendar}>
+                    <input
+                      id="s-siembra"
+                      name="fechaSiembra"
+                      type="date"
+                      min="1950-01-01"
+                      max={hoy}
+                      value={formulario.fechaSiembra}
+                      onChange={cambiar}
+                      required
+                    />
+                  </Campo>
+
+                  <Campo id="s-cosecha" etiqueta="Fecha estimada de la próxima cosecha *" icono={LuCalendarClock}>
+                    <input
+                      id="s-cosecha"
+                      name="fechaEstimadaCosecha"
+                      type="date"
+                      min={formulario.fechaSiembra || undefined}
+                      value={formulario.fechaEstimadaCosecha}
+                      onChange={cambiar}
                       required
                     />
                   </Campo>

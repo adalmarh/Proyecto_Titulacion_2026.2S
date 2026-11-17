@@ -17,7 +17,7 @@ import {
 import api from "../services/api";
 import Modal from "../components/Modal";
 import { AuthContext } from "../context/AuthContext";
-import { formatearFecha, formatearFechaHora, nombreCompleto } from "../utils/formatos";
+import { formatearCantidad, formatearFecha, formatearFechaHora, nombreCompleto } from "../utils/formatos";
 
 
 // ==========================================================
@@ -326,6 +326,12 @@ const Solicitudes = () => {
                 <dd>{ubicacion(revisando)}</dd>
                 <dt>Cómo llegar</dt>
                 <dd>{revisando.direccion || "—"}</dd>
+                <dt>Cosecha aprox.</dt>
+                <dd>{revisando.cantidadEstimadaKg ? formatearCantidad(revisando.cantidadEstimadaKg) : "—"}</dd>
+                <dt>Siembra</dt>
+                <dd>{revisando.fechaSiembra ? formatearFecha(revisando.fechaSiembra) : "—"}</dd>
+                <dt>Próxima cosecha</dt>
+                <dd>{revisando.fechaEstimadaCosecha ? formatearFecha(revisando.fechaEstimadaCosecha) : "—"}</dd>
                 <dt>Enviada</dt>
                 <dd>{formatearFechaHora(revisando.createdAt)}</dd>
                 <dt>Privacidad</dt>

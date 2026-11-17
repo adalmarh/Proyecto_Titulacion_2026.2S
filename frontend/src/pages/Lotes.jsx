@@ -57,6 +57,9 @@ const formularioVacio = {
 
 const fechaCampo = (valor) => (valor ? String(valor).substring(0, 10) : "");
 
+// Hoy en formato AAAA-MM-DD (hora local)
+const hoyCampo = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+
 
 const Lotes = () => {
 
@@ -152,6 +155,27 @@ const Lotes = () => {
   // que se habían llenado solos (no lo que la persona escribió).
   const [autollenado, setAutollenado] = useState(null); // { valores, origen }
 
+  // Lo mismo con la producción estimada del productor (de su
+  // solicitud de cuenta o de su ficha): cantidad en kg, fecha de
+  // siembra y fecha estimada de cosecha.
+  const [autollenadoProd, setAutollenadoProd] = useState(null); // { valores }
+
+  const produccionDelProductor = (productorId) => {
+    const prod = productores.find((x) => x._id === productorId)?.produccion;
+    if (!prod || (!prod.cantidadEstimadaKg && !prod.fechaSiembra && !prod.fechaEstimadaCosecha)) {
+      return null;
+    }
+    return {
+      valores: {
+        cantidad: prod.cantidadEstimadaKg ? String(prod.cantidadEstimadaKg) : "",
+        fechaSiembra: fechaCampo(prod.fechaSiembra),
+        fechaEstimadaCosecha: fechaCampo(prod.fechaEstimadaCosecha)
+      }
+    };
+  };
+
+  const CAMPOS_PRODUCCION = ["cantidad", "fechaSiembra", "fechaEstimadaCosecha"];
+
   const ubicacionDelProductor = (productorId) => {
     const p = productores.find((x) => x._id === productorId);
     const u = p?.ubicacion;
@@ -173,9 +197,22 @@ const Lotes = () => {
 
   const elegirProductor = (productorId) => {
     const encontrada = ubicacionDelProductor(productorId);
+    const produccion = produccionDelProductor(productorId);
 
     setFormulario((anterior) => {
       const nuevo = { ...anterior, productor: productorId };
+
+      // Producción: solo los campos vacíos o que se habían llenado solos
+      CAMPOS_PRODUCCION.forEach((campo) => {
+        const actual = String(anterior[campo] ?? "").trim();
+        const puesto = String(autollenadoProd?.valores?.[campo] ?? "").trim();
+        if (!actual || actual === puesto) {
+          nuevo[campo] = produccion?.valores?.[campo] || "";
+          // la cantidad guardada está en kg
+          if (campo === "cantidad" && nuevo.cantidad) nuevo.unidad = "kg";
+        }
+      });
+
       CAMPOS_UBICACION.forEach(([campo, origen]) => {
         const actual = (anterior[campo] || "").trim();
         const puesto = (autollenado?.valores?.[origen] || "").trim();
@@ -187,11 +224,13 @@ const Lotes = () => {
     });
 
     setAutollenado(encontrada);
+    setAutollenadoProd(produccion);
   };
 
   const abrirNuevo = () => {
     setEditando(null);
     setAutollenado(null);
+    setAutollenadoProd(null);
     setFormulario({ ...formularioVacio });
     setErrorForm("");
     setMensaje("");
@@ -202,6 +241,7 @@ const Lotes = () => {
     const u = lote.ubicacion || {};
     setEditando(lote);
     setAutollenado(null);
+    setAutollenadoProd(null);
     setFormulario({
       productor: idDe(lote.productor),
       descripcion: lote.descripcion || "",
@@ -657,6 +697,18 @@ const Lotes = () => {
                 <label htmlFor="l-estimada">Cosecha estimada</label>
                 <input id="l-estimada" type="date" name="fechaEstimadaCosecha" value={formulario.fechaEstimadaCosecha} onChange={cambiarCampo} />
               </div>
+
+              {!editando && formulario.productor && (
+                <p className={`gs-campo-ancho lt-autollenado${autollenadoProd ? "" : " lt-autollenado-vacio"}`}>
+                  {autollenadoProd
+                    ? "Cantidad y fechas tomadas de la producción estimada del productor. Ajusta la cantidad con el peso real del lote."
+                    : "Este productor aún no tiene producción estimada: escríbela aquí o complétala en Productores."}
+                  {autollenadoProd && formulario.fechaEstimadaCosecha &&
+                    formulario.fechaEstimadaCosecha === autollenadoProd.valores.fechaEstimadaCosecha &&
+                    formulario.fechaEstimadaCosecha < hoyCampo() &&
+                    " La fecha estimada de cosecha guardada ya pasó: actualízala."}
+                </p>
+              )}
 
               {editando && (
                 <div className="gs-campo">

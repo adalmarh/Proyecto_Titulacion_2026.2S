@@ -12,7 +12,7 @@ import {
 } from "react-icons/lu";
 
 import api from "../services/api";
-import { PROVINCIAS_ECUADOR } from "../utils/formatos";
+import { PROVINCIAS_ECUADOR, UNIDADES_ENTRADA } from "../utils/formatos";
 
 // Estilos: styles/sistema.css (importado en main.jsx)
 
@@ -34,8 +34,15 @@ const formularioVacio = {
   provincia: "",
   canton: "",
   parroquia: "",
-  referencia: ""
+  referencia: "",
+  cantidadEstimada: "",
+  unidadEstimada: "kg",
+  fechaSiembra: "",
+  fechaEstimadaCosecha: ""
 };
+
+// "2026-11-16T00:00:00.000Z" → "2026-11-16" para los campos de fecha
+const fechaCampo = (valor) => (valor ? String(valor).substring(0, 10) : "");
 
 // "referencia, parroquia, cantón, provincia" para el campo dirección
 const direccionDe = (f) =>
@@ -130,7 +137,12 @@ const Productores = () => {
       canton: p.ubicacion?.canton || "",
       parroquia: p.ubicacion?.parroquia || "",
       // Productores antiguos: su dirección pasa a la referencia
-      referencia: p.ubicacion?.descripcion || (p.ubicacion?.canton ? "" : p.direccion || "")
+      referencia: p.ubicacion?.descripcion || (p.ubicacion?.canton ? "" : p.direccion || ""),
+      // La producción se guarda en kg
+      cantidadEstimada: p.produccion?.cantidadEstimadaKg ?? "",
+      unidadEstimada: "kg",
+      fechaSiembra: fechaCampo(p.produccion?.fechaSiembra),
+      fechaEstimadaCosecha: fechaCampo(p.produccion?.fechaEstimadaCosecha)
     });
     setError("");
     setMensaje("");
@@ -152,9 +164,14 @@ const Productores = () => {
     event.preventDefault();
     setError("");
 
-    const { provincia, canton, parroquia, referencia, ...personales } = formulario;
+    const {
+      provincia, canton, parroquia, referencia,
+      cantidadEstimada, unidadEstimada, fechaSiembra, fechaEstimadaCosecha,
+      ...personales
+    } = formulario;
     const datos = {
       ...personales,
+      produccion: { cantidadEstimada, unidadEstimada, fechaSiembra, fechaEstimadaCosecha },
       ubicacion: {
         provincia,
         canton: canton.trim(),
@@ -462,6 +479,35 @@ const Productores = () => {
                 <div className="gs-campo">
                   <label htmlFor="p-referencia">Referencia para llegar</label>
                   <input id="p-referencia" name="referencia" value={formulario.referencia} onChange={cambiarCampo} maxLength={200} placeholder="Ej.: Finca La Ceiba, km 5 vía a Naranjito" />
+                </div>
+
+                <p className="gs-subtitulo-form gs-campo-ancho">
+                  Producción estimada
+                  <span>Llena sola la cantidad y las fechas de cada lote nuevo de este productor.</span>
+                </p>
+
+                <div className="gs-campo">
+                  <label htmlFor="p-cantidad">Cantidad aproximada por cosecha</label>
+                  <input id="p-cantidad" name="cantidadEstimada" type="number" min="0.01" step="any" inputMode="decimal" value={formulario.cantidadEstimada} onChange={cambiarCampo} placeholder="Ej.: 900" />
+                </div>
+
+                <div className="gs-campo">
+                  <label htmlFor="p-unidad">Unidad</label>
+                  <select id="p-unidad" name="unidadEstimada" value={formulario.unidadEstimada} onChange={cambiarCampo}>
+                    {UNIDADES_ENTRADA.map((u) => (
+                      <option key={u.valor} value={u.valor}>{u.texto}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="gs-campo">
+                  <label htmlFor="p-siembra">Fecha de siembra del cacaotal</label>
+                  <input id="p-siembra" name="fechaSiembra" type="date" min="1950-01-01" value={formulario.fechaSiembra} onChange={cambiarCampo} />
+                </div>
+
+                <div className="gs-campo">
+                  <label htmlFor="p-cosecha">Fecha estimada de la próxima cosecha</label>
+                  <input id="p-cosecha" name="fechaEstimadaCosecha" type="date" min={formulario.fechaSiembra || undefined} value={formulario.fechaEstimadaCosecha} onChange={cambiarCampo} />
                 </div>
 
               </div>

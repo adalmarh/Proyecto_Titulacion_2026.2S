@@ -18,6 +18,7 @@ const {
   validarDatosSolicitud,
   direccionCompleta,
   ubicacionFinca,
+  produccionDeSolicitud,
   filtroSolicitudes,
   puedeRevisar
 } = require("../controllers/solicitudController");
@@ -34,7 +35,11 @@ const base = {
   email: "Pedro@Finca.ec ",
   password: "cacao123",
   aceptaPrivacidad: true,
-  rolSolicitado: "productor"
+  rolSolicitado: "productor",
+  cantidadEstimada: "20",
+  unidadEstimada: "quintales",
+  fechaSiembra: "2015-03-10",
+  fechaEstimadaCosecha: "2026-12-15"
 };
 
 const falla = (datos, texto) =>
@@ -118,6 +123,18 @@ test("la ubicación de la finca pasa a la ficha del productor", () => {
     parroquia: "Recinto Los Monos",
     descripcion: "Finca La Ceiba, km 5 vía a Naranjito"
   });
+});
+
+test("la producción estimada es obligatoria y pasa a la ficha en kg", () => {
+  falla({ ...base, cantidadEstimada: "" }, "cantidad aproximada");
+  falla({ ...base, fechaSiembra: "" }, "fecha de siembra");
+  falla({ ...base, fechaEstimadaCosecha: "" }, "próxima cosecha");
+  falla({ ...base, cantidadEstimada: "0" }, "mayor que cero");
+
+  const produccion = produccionDeSolicitud(validarDatosSolicitud(base));
+  assert.equal(produccion.cantidadEstimadaKg, 907.18, "20 quintales = 907,18 kg");
+  assert.equal(produccion.fechaSiembra.toISOString().slice(0, 10), "2015-03-10");
+  assert.equal(produccion.fechaEstimadaCosecha.toISOString().slice(0, 10), "2026-12-15");
 });
 
 test("sin aceptar el aviso de privacidad no se envía la solicitud", () => {

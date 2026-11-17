@@ -1,4 +1,8 @@
 const mongoose = require("mongoose");
+const {
+  ErrorProduccion,
+  validarProduccion
+} = require("../utils/produccionEstimada");
 const bcrypt = require("bcryptjs");
 
 const SolicitudCuenta = require("../models/SolicitudCuenta");
@@ -127,6 +131,15 @@ const validarDatosSolicitud = (datos = {}) => {
     throw new ErrorSolicitud("El mensaje admite hasta 500 caracteres");
   }
 
+  // ---------- Producción estimada (obligatoria) ----------
+  let produccion;
+  try {
+    produccion = validarProduccion(datos, { obligatorio: true });
+  } catch (error) {
+    if (error instanceof ErrorProduccion) throw new ErrorSolicitud(error.message);
+    throw error;
+  }
+
   // Consentimiento expreso (LOPDP, art. 8)
   if (datos.aceptaPrivacidad !== true && datos.aceptaPrivacidad !== "true") {
     throw new ErrorSolicitud("Debes leer y aceptar el aviso de privacidad para enviar la solicitud");
@@ -144,7 +157,8 @@ const validarDatosSolicitud = (datos = {}) => {
     email,
     password,
     rolSolicitado,
-    mensaje
+    mensaje,
+    ...produccion
   };
 };
 
@@ -332,6 +346,14 @@ const ubicacionFinca = (s) => ({
 // APROBAR: crea la cuenta del productor
 // ==========================================
 
+// Producción estimada que pasa a la ficha del productor
+const produccionDeSolicitud = (s) => ({
+  cantidadEstimadaKg: s.cantidadEstimadaKg ?? null,
+  fechaSiembra: s.fechaSiembra ?? null,
+  fechaEstimadaCosecha: s.fechaEstimadaCosecha ?? null
+});
+
+
 const aprobarSolicitud = async (req, res) => {
   let productorNuevo = null;
 
@@ -354,6 +376,7 @@ const aprobarSolicitud = async (req, res) => {
       if (!productor.email) productor.email = solicitud.email;
       if (!productor.direccion && direccionCompleta(solicitud)) productor.direccion = direccionCompleta(solicitud);
       if (!productor.ubicacion?.canton) productor.ubicacion = ubicacionFinca(solicitud);
+      if (!productor.produccion?.cantidadEstimadaKg) productor.produccion = produccionDeSolicitud(solicitud);
     } else {
       productor = await Productor.create({
         nombre: solicitud.nombre,
@@ -362,7 +385,8 @@ const aprobarSolicitud = async (req, res) => {
         telefono: solicitud.telefono,
         email: solicitud.email,
         direccion: direccionCompleta(solicitud),
-        ubicacion: ubicacionFinca(solicitud)
+        ubicacion: ubicacionFinca(solicitud),
+        produccion: produccionDeSolicitud(solicitud)
       });
       productorNuevo = productor;
     }
@@ -488,6 +512,7 @@ module.exports = {
   validarDatosSolicitud,
   direccionCompleta,
   ubicacionFinca,
+  produccionDeSolicitud,
   filtroSolicitudes,
   puedeRevisar,
   crearSolicitud,

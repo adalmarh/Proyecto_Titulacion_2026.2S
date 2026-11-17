@@ -96,7 +96,7 @@ export const ESTADOS_GRANO = {
   baba: "En baba (fresco)"
 };
 
-const numeroEC = (n, decimales = 2) =>
+export const numeroEC = (n, decimales = 2) =>
   Number(n).toLocaleString("es-EC", { maximumFractionDigits: decimales });
 
 // "1.200 kg (≈ 26,5 qq)"; con grano: "1.200 kg (≈ 26,5 qq) · seco"

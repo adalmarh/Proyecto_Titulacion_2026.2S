@@ -1,5 +1,15 @@
 const Productor = require("../models/Productor");
 const {
+  ErrorProduccion,
+  validarProduccion
+} = require("../utils/produccionEstimada");
+
+
+// La ficha recibe la producción como
+// { cantidadEstimada, unidadEstimada, fechaSiembra, fechaEstimadaCosecha }
+// y la guarda ya validada y en kg (o lanza ErrorProduccion).
+const produccionValidada = (produccion) => validarProduccion(produccion || {});
+const {
   filtroProductores
 } = require("../middleware/alcanceMiddleware");
 
@@ -15,7 +25,8 @@ cedula,
 telefono,
 email,
 direccion,
-ubicacion
+ubicacion,
+produccion
 } = req.body;
 
 if (!nombre || !apellido || !cedula) {
@@ -33,6 +44,16 @@ if (productorExiste) {
   });
 }
 
+let produccionLista;
+try {
+  produccionLista = produccionValidada(produccion);
+} catch (errorProduccion) {
+  if (errorProduccion instanceof ErrorProduccion) {
+    return res.status(400).json({ mensaje: errorProduccion.message });
+  }
+  throw errorProduccion;
+}
+
 const productor = await Productor.create({
   nombre,
   apellido,
@@ -40,7 +61,8 @@ const productor = await Productor.create({
   telefono,
   email,
   direccion,
-  ubicacion
+  ubicacion,
+  produccion: produccionLista
   // La cuenta de acceso (campo "usuario") se vincula
   // desde la gestión de usuarios del administrador.
 });
@@ -116,6 +138,17 @@ try {
 // La cuenta de acceso se vincula solo desde
 // la gestión de usuarios.
 const { usuario, ...datosActualizacion } = req.body || {};
+
+if ("produccion" in datosActualizacion) {
+  try {
+    datosActualizacion.produccion = produccionValidada(datosActualizacion.produccion);
+  } catch (errorProduccion) {
+    if (errorProduccion instanceof ErrorProduccion) {
+      return res.status(400).json({ mensaje: errorProduccion.message });
+    }
+    throw errorProduccion;
+  }
+}
 const productor = await Productor.findByIdAndUpdate(
 req.params.id,
 datosActualizacion,

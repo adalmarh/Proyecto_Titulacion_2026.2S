@@ -707,6 +707,10 @@ const ejecutarCasos = async () => {
     password: CLAVE,
     rolSolicitado: "productor",
     aceptaPrivacidad: true,
+    cantidadEstimada: "20",
+    unidadEstimada: "quintales",
+    fechaSiembra: "2015-03-10",
+    fechaEstimadaCosecha: new Date(Date.now() + 60 * 86400000).toISOString().slice(0, 10),
     ...extra
   });
 
@@ -802,6 +806,17 @@ const ejecutarCasos = async () => {
       D.fichaRosa?.ubicacion?.canton === "Milagro" && D.fichaRosa?.ubicacion?.parroquia === "Recinto Los Monos",
     obtenido: `${D.fichaRosa?.telefono || "sin celular"} · ${D.fichaRosa?.direccion || "sin dirección"} · cantón ${D.fichaRosa?.ubicacion?.canton || "—"}`
   }));
+
+  await caso("SC27", "Solicitud sin la cantidad aproximada de cacao", "400", async () =>
+    codigo(await http("POST", "/public/solicitudes", { body: solicitud({ email: "sin.cantidad@finca.ec", cantidadEstimada: "" }) }), 400));
+
+  await caso("SC28", "La ficha del productor recibe la producción estimada en kg", "907,18 kg y fecha de siembra 2015-03-10", async () => {
+    const p = D.fichaRosa?.produccion || {};
+    return {
+      ok: p.cantidadEstimadaKg === 907.18 && String(p.fechaSiembra || "").startsWith("2015-03-10") && Boolean(p.fechaEstimadaCosecha),
+      obtenido: `${p.cantidadEstimadaKg ?? "sin cantidad"} kg · siembra ${String(p.fechaSiembra || "—").slice(0, 10)}`
+    };
+  });
 
   await caso("SC16", "La persona aprobada inicia sesión y ve su panel", "200 · rol productor", async () => {
     const r = await http("POST", "/auth/login", { body: { email: "rosa@finca.ec", password: CLAVE } });

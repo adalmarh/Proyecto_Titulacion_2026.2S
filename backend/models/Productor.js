@@ -45,6 +45,15 @@ ubicacion: {
   descripcion: { type: String, trim: true, default: "" }
 },
 
+// Producción estimada (utils/produccionEstimada.js). Viene de
+// la solicitud de cuenta y el administrador la puede corregir.
+// Al registrar un lote nuevo llena la cantidad y las fechas.
+produccion: {
+  cantidadEstimadaKg: { type: Number, default: null },
+  fechaSiembra: { type: Date, default: null },
+  fechaEstimadaCosecha: { type: Date, default: null }
+},
+
 usuario: {
   type: mongoose.Schema.Types.ObjectId,
   ref: "Usuario"

@@ -91,6 +91,23 @@ const solicitudCuentaSchema = new mongoose.Schema(
       default: ""
     },
 
+    // ---------- Producción estimada (utils/produccionEstimada.js) ----------
+    // Cantidad aproximada por cosecha, siempre en kg
+    cantidadEstimadaKg: {
+      type: Number,
+      default: null
+    },
+
+    fechaSiembra: {
+      type: Date,
+      default: null
+    },
+
+    fechaEstimadaCosecha: {
+      type: Date,
+      default: null
+    },
+
     mensaje: {
       type: String,
       trim: true,

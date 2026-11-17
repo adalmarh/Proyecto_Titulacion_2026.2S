@@ -14,7 +14,8 @@ import {
   LuFileClock,
   LuSignature,
   LuCalendarClock,
-  LuShieldCheck
+  LuShieldCheck,
+  LuEye
 } from "react-icons/lu";
 
 import { diasParaVencer as diasPara } from "../utils/formatos";
@@ -22,6 +23,7 @@ import api from "../services/api";
 import Modal from "../components/Modal";
 import ModalDictamen from "../components/ModalDictamen";
 import ModalFirma from "../components/ModalFirma";
+import VistaPreviaCertificado from "../components/VistaPreviaCertificado";
 import { AuthContext } from "../context/AuthContext";
 import {
   obtenerCertificaciones,
@@ -87,6 +89,7 @@ const Certificaciones = () => {
 
   // Firma del certificado PDF
   const [firmando, setFirmando] = useState(null);
+  const [viendo, setViendo] = useState(null);
 
 
   // ========================================
@@ -307,6 +310,10 @@ const Certificaciones = () => {
 
     if (c.estado === "aprobada") {
       acciones.push(
+        <button key="ver" className="gs-btn gs-btn-icono" onClick={() => setViendo(c)} title="Ver el certificado sin descargarlo">
+          <LuEye aria-hidden="true" />
+          Ver
+        </button>,
         <button key="pdf" className="gs-btn gs-btn-icono" onClick={() => descargarPDF(c)}>
           <LuDownload aria-hidden="true" />
           PDF
@@ -680,6 +687,10 @@ const Certificaciones = () => {
 
 
       {/* FIRMA ELECTRÓNICA DEL PDF */}
+      {viendo && (
+        <VistaPreviaCertificado certificacion={viendo} onCerrar={() => setViendo(null)} />
+      )}
+
       {firmando && (
         <ModalFirma
           certificacion={firmando}

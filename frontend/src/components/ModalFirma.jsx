@@ -8,10 +8,13 @@ import {
   LuTriangleAlert,
   LuShieldCheck,
   LuKeyRound,
-  LuQrCode
+  LuQrCode,
+  LuEye,
+  LuEyeOff
 } from "react-icons/lu";
 
 import Modal from "./Modal";
+import { VisorCertificado } from "./VistaPreviaCertificado";
 import {
   descargarCertificadoPDF,
   firmarEnSistema,
@@ -46,6 +49,7 @@ const ModalFirma = ({ certificacion, onCerrar, onListo }) => {
   // Firma en el sistema
   const [password, setPassword] = useState("");
   const [declaro, setDeclaro] = useState(false);
+  const [verPrevia, setVerPrevia] = useState(false);
 
   // Alternativa: subir el PDF firmado fuera del sistema
   const [archivo, setArchivo] = useState(null);
@@ -216,6 +220,18 @@ const ModalFirma = ({ certificacion, onCerrar, onListo }) => {
                 </span>
               </div>
             </div>
+
+            <button
+              type="button"
+              className="gs-btn gs-btn-secundario fs-ver"
+              onClick={() => setVerPrevia((v) => !v)}
+              aria-expanded={verPrevia}
+            >
+              {verPrevia ? <LuEyeOff aria-hidden="true" /> : <LuEye aria-hidden="true" />}
+              {verPrevia ? "Ocultar el certificado" : "Ver el certificado antes de firmar"}
+            </button>
+
+            {verPrevia && <VisorCertificado certificacion={certificacion} alto="55vh" />}
 
             <ul className="fs-datos">
               <li>Se sellan los datos del certificado: lote, cantidad, fechas, análisis y grado INEN, resultado y observaciones.</li>

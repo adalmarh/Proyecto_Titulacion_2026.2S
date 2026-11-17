@@ -17,6 +17,7 @@ const Modal = ({
   onCerrar,
   bloqueado = false,
   ancho = false,
+  clase = "",
   children
 }) => {
 
@@ -57,7 +58,7 @@ const Modal = ({
       <div
         ref={caja}
         tabIndex={-1}
-        className={`gs-modal ${ancho ? "gs-modal-ancho" : ""}`}
+        className={`gs-modal ${ancho ? "gs-modal-ancho" : ""} ${clase}`.trim()}
         role="dialog"
         aria-modal="true"
         aria-label={titulo}

@@ -110,11 +110,9 @@ export const rechazarCertificacion = async (
 // { original: true } se descarga el PDF sin
 // firmar (el que se imprime o se firma).
 // ==========================================
-export const descargarCertificadoPDF = async (
-  id,
-  nombreArchivo = "certificado.pdf",
-  { original = false } = {}
-) => {
+// El PDF del certificado como archivo en memoria (Blob).
+// Lo usan la descarga y la vista previa.
+export const obtenerCertificadoPDF = async (id, { original = false } = {}) => {
   const respuesta = await api.get(
     `/certificaciones/${id}/pdf`,
     {
@@ -123,8 +121,16 @@ export const descargarCertificadoPDF = async (
     }
   );
 
+  return new Blob([respuesta.data], { type: "application/pdf" });
+};
+
+export const descargarCertificadoPDF = async (
+  id,
+  nombreArchivo = "certificado.pdf",
+  { original = false } = {}
+) => {
   const url = window.URL.createObjectURL(
-    new Blob([respuesta.data], { type: "application/pdf" })
+    await obtenerCertificadoPDF(id, { original })
   );
 
   const enlace = document.createElement("a");

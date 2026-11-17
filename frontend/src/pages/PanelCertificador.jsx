@@ -8,7 +8,8 @@ import {
   LuBadgeCheck,
   LuDownload,
   LuHistory,
-  LuSignature
+  LuSignature,
+  LuEye
 } from "react-icons/lu";
 
 import AvisoVencimientos from "../components/AvisoVencimientos";
@@ -17,6 +18,7 @@ import { AuthContext } from "../context/AuthContext";
 import { descargarCertificadoPDF } from "../services/certificacionService";
 import ModalDictamen from "../components/ModalDictamen";
 import ModalFirma from "../components/ModalFirma";
+import VistaPreviaCertificado from "../components/VistaPreviaCertificado";
 import {
   NOMBRE_ESTADO_CERTIFICACION,
   NOMBRE_ESTADO_LOTE,
@@ -55,6 +57,7 @@ const PanelCertificador = () => {
 
   // Firma del certificado PDF
   const [firmando, setFirmando] = useState(null);
+  const [viendo, setViendo] = useState(null);
   const sinFirmar = certificaciones.filter((c) => c.estado === "aprobada" && !c.firma?.firmada);
 
 
@@ -301,6 +304,17 @@ const PanelCertificador = () => {
                   {c.estado === "aprobada" && (
                     <button
                       className="pn-btn pn-btn-secundario"
+                      onClick={() => setViendo(c)}
+                      title="Ver el certificado sin descargarlo"
+                    >
+                      <LuEye aria-hidden="true" />
+                      Ver
+                    </button>
+                  )}
+
+                  {c.estado === "aprobada" && (
+                    <button
+                      className="pn-btn pn-btn-secundario"
                       onClick={() => descargarPDF(c)}
                     >
                       <LuDownload aria-hidden="true" />
@@ -325,6 +339,10 @@ const PanelCertificador = () => {
         )}
       </section>
 
+
+      {viendo && (
+        <VistaPreviaCertificado certificacion={viendo} onCerrar={() => setViendo(null)} />
+      )}
 
       {firmando && (
         <ModalFirma

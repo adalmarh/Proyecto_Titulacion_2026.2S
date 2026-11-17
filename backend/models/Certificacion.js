@@ -216,8 +216,10 @@ const certificacionSchema =
       firma: {
         firmada: { type: Boolean, default: false },
         // manuscrita: firmada a mano (impresa y escaneada) o en Word;
-        // electronica: firmada con FirmaEC u otro firmador.
-        tipo: { type: String, enum: ["", "manuscrita", "electronica"], default: "" },
+        // electronica: firmada con FirmaEC u otro firmador;
+        // sistema: firma electrónica simple hecha dentro de RutaCacao
+        //          (utils/firmaSistema.js).
+        tipo: { type: String, enum: ["", "manuscrita", "electronica", "sistema"], default: "" },
         firmante: { type: String, default: "" },
         identificacion: { type: String, default: "" },
         emisor: { type: String, default: "" },
@@ -225,6 +227,11 @@ const certificacionSchema =
         fechaFirma: { type: Date, default: null },
         certificadoHasta: { type: Date, default: null },
         sha256: { type: String, default: "" },
+        // Solo en la firma del sistema: sello HMAC de la huella
+        // y código corto que se imprime en el PDF
+        sello: { type: String, default: "" },
+        codigoFirma: { type: String, default: "" },
+        version: { type: Number, default: null },
         fechaCarga: { type: Date, default: null },
         subidoPor: {
           type: mongoose.Schema.Types.ObjectId,

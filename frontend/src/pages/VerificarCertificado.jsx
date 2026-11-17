@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import {
   LuSprout,
@@ -36,6 +36,10 @@ const VerificarCertificado = () => {
 
   const { codigo } = useParams();
 
+  // El QR del sello de firma abre esta página con ?firma=CÓDIGO
+  const [parametros] = useSearchParams();
+  const codigoSello = (parametros.get("firma") || "").toUpperCase();
+
   const [datos, setDatos] = useState(null);
   const [estado, setEstado] = useState("cargando"); // cargando | listo | no_existe | error
   const [comparacion, setComparacion] = useState(null); // null | "calculando" | "igual" | "distinto"
@@ -59,7 +63,8 @@ const VerificarCertificado = () => {
 
   const vigente = datos?.estado === "vigente";
   const firma = datos?.firma;
-  const electronica = firma?.firmada && firma.tipo !== "manuscrita";
+  const sistema = firma?.firmada && firma.tipo === "sistema";
+  const electronica = firma?.firmada && firma.tipo !== "manuscrita" && !sistema;
 
   return (
     <div className="vf">
@@ -154,7 +159,55 @@ const VerificarCertificado = () => {
                 Firma del certificador
               </h2>
 
-              {firma?.firmada ? (
+              {sistema ? (
+                <>
+                  {/* FIRMA ELECTRÓNICA DEL SISTEMA: se comprueba con los datos actuales */}
+                  {firma.valida && firma.integra ? (
+                    <p className="vf-firma-ok">
+                      <LuCircleCheck aria-hidden="true" />
+                      <span>
+                        <strong>Firma electrónica válida.</strong> Firmado por{" "}
+                        <strong>{firma.firmante}</strong>
+                        {firma.fechaFirma && ` el ${formatearFechaHora(firma.fechaFirma)}`}
+                        <br />
+                        Los datos del certificado son los mismos que se firmaron.
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="vf-no-coincide">
+                      <LuCircleX aria-hidden="true" />
+                      <span>
+                        {firma.valida
+                          ? "La firma fue hecha en RutaCacao, pero los datos del certificado cambiaron después de firmarla. No confíe en esta copia sin consultar a la empresa."
+                          : "La firma de este certificado no es válida."}
+                      </span>
+                    </p>
+                  )}
+
+                  <dl className="vf-datos vf-sello">
+                    <dt>Código de firma</dt>
+                    <dd><code>{firma.codigoFirma || "—"}</code></dd>
+                    <dt>Huella SHA-256</dt>
+                    <dd><code className="vf-huella">{firma.sha256}</code></dd>
+                  </dl>
+
+                  {codigoSello && firma.codigoFirma && codigoSello !== firma.codigoFirma && (
+                    <p className="vf-no-coincide">
+                      <LuTriangleAlert aria-hidden="true" />
+                      <span>
+                        El sello escaneado tiene el código {codigoSello}, que no corresponde a la firma registrada
+                        ({firma.codigoFirma}). Ese documento puede haber sido alterado.
+                      </span>
+                    </p>
+                  )}
+
+                  <p className="vf-nota">
+                    Firma electrónica simple del sistema RutaCacao: el certificador la confirmó con su contraseña
+                    y el sistema selló los datos del certificado. No reemplaza una firma con certificado de una
+                    entidad de certificación acreditada.
+                  </p>
+                </>
+              ) : firma?.firmada ? (
                 <>
                   <p className="vf-firma-ok">
                     <LuCircleCheck aria-hidden="true" />

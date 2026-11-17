@@ -207,18 +207,46 @@ const generarCertificadoPDF = async (certificacion, { urlVerificacion, urlNorma 
 
 
   // ---------- Recuadro para la firma del certificador ----------
-  // Queda en blanco para firmar a mano o colocar la firma.
+  // Sin firma: queda en blanco para firmar a mano o con FirmaEC.
+  // Firmado en el sistema: sello con QR (utils/firmaSistema.js).
   const FX = ANCHO - X - 200;
+  const firmaSistema = certificacion.firma?.firmada && certificacion.firma.tipo === "sistema";
 
-  doc.roundedRect(FX, Y_PIE, 200, 84, 6).dash(3, { space: 3 }).lineWidth(0.8).strokeColor("#9ca3af").stroke();
-  doc.undash();
-  doc.fillColor("#9ca3af").font("Helvetica").fontSize(7)
-    .text("Firma", FX + 8, Y_PIE + 72, { width: 184, align: "left" });
+  if (firmaSistema) {
+    const f = certificacion.firma;
+    const urlFirma = `${urlVerificacion}?firma=${encodeURIComponent(f.codigoFirma || "")}`;
+    const qrFirma = await QRCode.toBuffer(urlFirma, { margin: 0, width: 200, errorCorrectionLevel: "M" });
+    const fechaHora = new Date(f.fechaFirma).toLocaleString("es-EC", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit", hour12: false,
+      timeZone: "America/Guayaquil"
+    });
+
+    doc.roundedRect(FX, Y_PIE, 200, 84, 6).lineWidth(0.9).strokeColor(COLOR.verde).stroke();
+    doc.image(qrFirma, FX + 7, Y_PIE + 7, { width: 70, link: urlFirma });
+    doc.fillColor(COLOR.gris).font("Helvetica").fontSize(6.5)
+      .text("Firmado electrónicamente por:", FX + 84, Y_PIE + 8, { width: 110 });
+    doc.fillColor(COLOR.texto).font("Helvetica-Bold").fontSize(8.5)
+      .text((f.firmante || nombre(certificacion.certificador)).toUpperCase(), FX + 84, Y_PIE + 17, { width: 110, height: 22, ellipsis: true, lineGap: 0 });
+    doc.fillColor(COLOR.gris).font("Helvetica").fontSize(6.5)
+      .text(`Fecha: ${fechaHora} (Ecuador)`, FX + 84, Y_PIE + 41, { width: 110 })
+      .text(`Código: ${f.codigoFirma || ""}`, FX + 84, Y_PIE + 50, { width: 110 })
+      .text("Valide la firma escaneando el código QR", FX + 84, Y_PIE + 62, { width: 110, lineGap: 0 });
+  } else {
+    doc.roundedRect(FX, Y_PIE, 200, 84, 6).dash(3, { space: 3 }).lineWidth(0.8).strokeColor("#9ca3af").stroke();
+    doc.undash();
+    doc.fillColor("#9ca3af").font("Helvetica").fontSize(7)
+      .text("Firma", FX + 8, Y_PIE + 72, { width: 184, align: "left" });
+  }
 
   doc.fillColor(COLOR.texto).font("Helvetica-Bold").fontSize(10)
     .text(nombre(certificacion.certificador), FX, Y_PIE + 92, { width: 200, align: "center" });
   doc.fillColor(COLOR.gris).font("Helvetica").fontSize(9)
     .text("Certificador", FX, Y_PIE + 106, { width: 200, align: "center" });
+  if (firmaSistema) {
+    doc.fillColor(COLOR.gris).font("Helvetica").fontSize(6.5)
+      .text("Firma electrónica simple del sistema RutaCacao", FX, Y_PIE + 118, { width: 200, align: "center" });
+  }
 
 
   // ---------- Pie ----------

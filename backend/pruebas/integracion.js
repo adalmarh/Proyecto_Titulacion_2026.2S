@@ -507,6 +507,38 @@ const ejecutarCasos = async () => {
   });
 
 
+  grupo("6a. Firma electrónica dentro del sistema");
+
+  const FIRMAR = `/certificaciones/${D.C1._id}/firmar`;
+
+  await caso("FS01", "Un productor intenta firmar en el sistema", "403", async () =>
+    codigo(await http("POST", FIRMAR, { token: T.prod, body: { password: CLAVE, confirmo: true } }), 403));
+
+  await caso("FS02", "El administrador intenta firmar en el sistema", "403 · solo el certificador", async () =>
+    codigo(await http("POST", FIRMAR, { token: T.admin, body: { password: CLAVE, confirmo: true } }), 403));
+
+  await caso("FS03", "El certificador firma con una contraseña incorrecta", "400 · no se firma ni se cierra la sesión", async () =>
+    codigo(await http("POST", FIRMAR, { token: T.cert, body: { password: "otra-clave", confirmo: true } }), 400));
+
+  await caso("FS04", "El certificador asignado firma con su contraseña", "200 · firma del sistema con código", async () => {
+    const r = await http("POST", FIRMAR, { token: T.cert, body: { password: CLAVE, confirmo: true } });
+    const f = r.datos?.firma || {};
+    return { ok: r.status === 200 && f.tipo === "sistema" && /^[0-9A-F]{4}(-[0-9A-F]{4}){3}$/.test(f.codigoFirma || ""), obtenido: `${r.status} · ${f.tipo} · ${f.codigoFirma}` };
+  });
+
+  await caso("FS05", "La verificación pública confirma la firma y los datos", "valida e integra", async () => {
+    const c = await http("GET", `/certificaciones/${D.C1._id}`, { token: T.admin });
+    const r = await http("GET", `/public/certificados/${c.datos?.codigoVerificacion}`);
+    const f = r.datos?.firma || {};
+    return { ok: r.status === 200 && f.tipo === "sistema" && f.valida === true && f.integra === true, obtenido: `${r.status} · ${f.tipo} · válida ${f.valida} · íntegra ${f.integra}` };
+  });
+
+  await caso("FS06", "Firmar dos veces el mismo certificado", "400 · ya está firmado", async () =>
+    codigo(await http("POST", FIRMAR, { token: T.cert, body: { password: CLAVE, confirmo: true } }), 400));
+
+
+  // Los casos siguientes prueban la alternativa (firmar fuera
+  // del sistema y subir el PDF); reemplaza la firma anterior.
   grupo("6b. Firma del certificado PDF (manuscrita escaneada o electrónica)");
 
   let original;

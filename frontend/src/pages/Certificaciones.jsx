@@ -233,10 +233,15 @@ const Certificaciones = () => {
   // DICTAMEN Y PDF
   // ========================================
 
-  const dictamenListo = async (texto) => {
+  const dictamenListo = async (texto, resultado) => {
+    const certificacion = dictaminando;
     setMensaje(texto);
     setDictaminando(null);
     await cargar();
+    // Recién aprobada: se abre la firma para firmar en el mismo momento
+    if (resultado?.aprobada && certificacion && puedeFirmar(certificacion)) {
+      setFirmando({ ...certificacion, estado: "aprobada", firma: { firmada: false } });
+    }
   };
 
   const descargarPDF = async (certificacion) => {

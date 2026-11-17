@@ -128,10 +128,15 @@ const PanelCertificador = () => {
     }
   };
 
-  const dictamenListo = async (texto) => {
+  const dictamenListo = async (texto, resultado) => {
+    const certificacion = revisando;
     setMensaje(texto);
     setRevisando(null);
     await cargar();
+    // Recién aprobada: se abre la firma para firmar en el mismo momento
+    if (resultado?.aprobada && certificacion) {
+      setFirmando({ ...certificacion, estado: "aprobada", firma: { firmada: false } });
+    }
   };
 
 

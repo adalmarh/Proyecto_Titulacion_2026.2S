@@ -275,3 +275,25 @@
     margin-bottom: 8px;
   }
 }
+
+
+/* Firma electrónica del sistema */
+.vf-sello {
+  margin: 12px 0;
+}
+
+.vf-sello code {
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 13px;
+}
+
+.vf-huella {
+  word-break: break-all;
+  font-size: 11.5px !important;
+  color: #4a5568;
+}
+
+.vf-no-coincide span,
+.vf-firma-ok span {
+  line-height: 1.5;
+}

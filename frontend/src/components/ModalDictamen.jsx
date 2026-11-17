@@ -153,7 +153,8 @@ const ModalDictamen = ({
       onListo(
         aprobar
           ? `Certificación ${certificacion.codigo || ""} aprobada correctamente`
-          : `Certificación ${certificacion.codigo || ""} rechazada`
+          : `Certificación ${certificacion.codigo || ""} rechazada`,
+        { aprobada: aprobar }
       );
 
     } catch (err) {

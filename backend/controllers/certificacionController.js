@@ -8,6 +8,12 @@ const Usuario =
   require("../models/Usuario");
 
 const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
+const {
+  ErrorFirma,
+  firmarCertificacion,
+  verificarFirma
+} = require("../utils/firmaSistema");
 const { datosEmpresa } = require("../utils/empresa");
 const {
   ErrorAnalisis,
@@ -1436,6 +1442,104 @@ const subirCertificadoFirmado = async (req, res) => {
 
 
 // ==========================================
+// FIRMAR DENTRO DEL SISTEMA (firma electrónica simple)
+// POST /api/certificaciones/:id/firmar
+// Body: { password, confirmo: true }
+// Solo el certificador asignado. Vuelve a escribir su
+// contraseña para confirmar que es él quien firma. No se
+// descarga ni se sube ningún archivo: el PDF se genera ya
+// con el sello de la firma (utils/firmaSistema.js).
+// ==========================================
+
+// Contraseñas incorrectas al firmar: 5 cada 15 minutos
+const FALLOS_FIRMA_MAX = 5;
+const fallosFirma = new Map();
+
+const fallosRecientes = (idUsuario) => {
+  const ahora = Date.now();
+  const lista = (fallosFirma.get(idUsuario) || []).filter((t) => ahora - t < 15 * 60 * 1000);
+  fallosFirma.set(idUsuario, lista);
+  return lista;
+};
+
+const firmarEnSistema = async (req, res) => {
+  try {
+    const { password, confirmo } = req.body || {};
+
+    const certificacion = await Certificacion.findById(req.params.id)
+      .populate("lote", "codigo cantidad estadoGrano productor");
+
+    if (!certificacion) {
+      return res.status(404).json({ mensaje: "La certificación no existe" });
+    }
+
+    // Solo el certificador asignado (nadie más)
+    if (
+      req.usuario.rol !== "certificador" ||
+      !certificacion.certificador ||
+      String(certificacion.certificador) !== String(req.usuario._id)
+    ) {
+      return res.status(403).json({ mensaje: "Solo el certificador asignado puede firmar este certificado" });
+    }
+
+    if (certificacion.estado !== "aprobada") {
+      return res.status(400).json({ mensaje: "Solo se pueden firmar certificaciones aprobadas" });
+    }
+
+    if (certificacion.firma?.firmada) {
+      return res.status(400).json({ mensaje: "Este certificado ya está firmado" });
+    }
+
+    if (confirmo !== true) {
+      return res.status(400).json({ mensaje: "Confirma que revisaste el certificado y que lo firmas" });
+    }
+
+    if (!password) {
+      return res.status(400).json({ mensaje: "Escribe tu contraseña para firmar" });
+    }
+
+    const idUsuario = String(req.usuario._id);
+    if (fallosRecientes(idUsuario).length >= FALLOS_FIRMA_MAX) {
+      return res.status(429).json({ mensaje: "Demasiados intentos con la contraseña incorrecta. Espera 15 minutos." });
+    }
+
+    const usuario = await Usuario.findById(req.usuario._id).select("nombre apellido password");
+    const correcta = usuario && await bcrypt.compare(String(password), usuario.password);
+
+    if (!correcta) {
+      fallosRecientes(idUsuario).push(Date.now());
+      // 400 y no 401: un 401 haría que el navegador cierre la sesión
+      return res.status(400).json({ mensaje: "La contraseña no es correcta. La firma no se realizó." });
+    }
+    fallosFirma.delete(idUsuario);
+
+    // El PDF firmado necesita su código de verificación
+    await asegurarCodigoVerificacion(certificacion);
+
+    const fecha = new Date();
+    certificacion.firma = {
+      ...firmarCertificacion(certificacion, usuario, fecha),
+      fechaCarga: fecha,
+      subidoPor: usuario._id
+    };
+    await certificacion.save();
+
+    return res.status(200).json({
+      mensaje: `Certificado ${certificacion.codigo || ""} firmado electrónicamente por ${certificacion.firma.firmante}`,
+      firma: certificacion.firma
+    });
+
+  } catch (error) {
+    if (error instanceof ErrorFirma) {
+      return res.status(error.estado).json({ mensaje: error.message });
+    }
+    console.error("Error al firmar en el sistema:", error);
+    return res.status(500).json({ mensaje: "Error al firmar el certificado" });
+  }
+};
+
+
+// ==========================================
 // VERIFICACIÓN PÚBLICA DEL CERTIFICADO
 // GET /api/public/certificados/:codigo
 // Cualquier persona que escanee el QR del PDF.
@@ -1505,7 +1609,14 @@ const verificarCertificadoPublico = async (req, res) => {
           emisor: certificacion.firma.emisor,
           autofirmado: certificacion.firma.autofirmado,
           fechaFirma: certificacion.firma.fechaFirma,
-          sha256: certificacion.firma.sha256
+          sha256: certificacion.firma.sha256,
+          // Firma del sistema: se comprueba con los datos actuales
+          ...(certificacion.firma.tipo === "sistema"
+            ? (() => {
+              const v = verificarFirma(certificacion);
+              return { codigoFirma: v.codigoFirma, valida: v.valida, integra: v.integra };
+            })()
+            : {})
         }
         : { firmada: false }
     });
@@ -1708,6 +1819,7 @@ module.exports = {
   descargarCertificadoPDF,
 
   subirCertificadoFirmado,
+  firmarEnSistema,
 
   verificarCertificadoPublico
 

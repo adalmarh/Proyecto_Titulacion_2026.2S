@@ -31,6 +31,10 @@ services:
         value: "1"
       - key: JWT_SECRET
         generateValue: true
+      # Clave para sellar la firma electrónica del sistema.
+      # NO cambiarla: las firmas anteriores dejarían de verificarse.
+      - key: FIRMA_SECRETO
+        generateValue: true
       - key: MONGO_URI
         sync: false
       # Dirección del frontend publicado, p. ej. https://rutacacao.onrender.com

@@ -138,9 +138,24 @@ export const descargarCertificadoPDF = async (
 };
 
 // ==========================================
-// SUBIR EL CERTIFICADO FIRMADO
-// Firma manuscrita escaneada, en Word o electrónica.
-// Se envía el PDF tal cual (sin formularios) y la
+// FIRMAR DENTRO DEL SISTEMA
+// Firma electrónica simple: el certificador
+// confirma con su contraseña. No se sube nada.
+// ==========================================
+export const firmarEnSistema = async (id, password) => {
+  const respuesta = await api.post(
+    `/certificaciones/${id}/firmar`,
+    { password, confirmo: true }
+  );
+
+  return respuesta.data;
+};
+
+
+// ==========================================
+// SUBIR EL PDF FIRMADO FUERA DEL SISTEMA
+// Firma manuscrita escaneada, en Word o con
+// FirmaEC. Se envía el PDF tal cual y la
 // confirmación de que ya contiene la firma.
 // ==========================================
 export const subirCertificadoFirmado = async (id, archivo) => {

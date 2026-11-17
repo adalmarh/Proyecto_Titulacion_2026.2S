@@ -2141,3 +2141,110 @@
   margin: 0;
   color: #553c9a;
 }
+
+
+/* ---------- Firma en el sistema (ModalFirma) ---------- */
+
+.fs {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #9ae6b4;
+  border-radius: 12px;
+  background: #fbfffc;
+}
+
+.fs-cabecera {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.fs-cabecera > svg {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  color: #2f855a;
+}
+
+.fs-cabecera strong {
+  display: block;
+  font-size: 15.5px;
+  color: #1c4532;
+}
+
+.fs-cabecera span {
+  font-size: 13px;
+  color: #4a5568;
+  line-height: 1.5;
+}
+
+.fs-datos {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+  color: #4a5568;
+  line-height: 1.6;
+}
+
+.fs-clave {
+  max-width: 360px;
+}
+
+.fs-entrada {
+  position: relative;
+}
+
+.fs-entrada svg {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  transform: translateY(-50%);
+  color: #6b7280;
+}
+
+.fs-entrada input {
+  width: 100%;
+  padding-left: 36px;
+}
+
+.fs .gs-botones-modal {
+  margin-top: 0;
+}
+
+.fm-estado .fm-codigo {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+}
+
+.fm-estado .fm-codigo strong {
+  display: inline;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+.fm-alternativa {
+  margin-top: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.fm-alternativa > summary {
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.fm-alternativa[open] > summary {
+  margin-bottom: 12px;
+}
+
+.fm-subir {
+  margin-top: 10px;
+}

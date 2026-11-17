@@ -11,7 +11,8 @@ const {
   rechazarCertificacion,
   sugerirDictamenIA,
   descargarCertificadoPDF,
-  subirCertificadoFirmado
+  subirCertificadoFirmado,
+  firmarEnSistema
 } = require(
   "../controllers/certificacionController"
 );
@@ -169,6 +170,22 @@ const recibirPDF = (req, res, next) =>
     }
     return next();
   });
+
+// ==========================================
+// FIRMAR DENTRO DEL SISTEMA
+// Solo el certificador asignado, con su
+// contraseña. No se sube ningún archivo.
+// ==========================================
+
+router.post(
+  "/:id/firmar",
+  protegerRuta,
+  permitirRoles(
+    "certificador"
+  ),
+  accesoCertificacion(),
+  firmarEnSistema
+);
 
 router.post(
   "/:id/firma",

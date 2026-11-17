@@ -1,5 +1,9 @@
 const Lote =
   require("../models/Lote");
+const {
+  ErrorSolicitudLote,
+  solicitudParaAprobar
+} = require("./solicitudLoteController");
 
 const {
   aKilogramos,
@@ -43,7 +47,8 @@ const crearLote = async (
       fechaEstimadaCosecha,
       cantidad,
       unidad,
-      estadoGrano
+      estadoGrano,
+      solicitudLote
     } = req.body;
 
 
@@ -121,6 +126,25 @@ const crearLote = async (
 
 
     // ========================================
+    // ¿APRUEBA UNA SOLICITUD DEL PRODUCTOR?
+    // Se comprueba ANTES de crear el lote.
+    // ========================================
+
+    let solicitud = null;
+
+    if (solicitudLote) {
+      try {
+        solicitud = await solicitudParaAprobar(solicitudLote, productor);
+      } catch (error) {
+        if (error instanceof ErrorSolicitudLote) {
+          return res.status(error.estado).json({ mensaje: error.message });
+        }
+        throw error;
+      }
+    }
+
+
+    // ========================================
     // CREAR LOTE
     // ========================================
 
@@ -147,6 +171,16 @@ const crearLote = async (
         estadoGrano: grano
 
       });
+
+
+    // La solicitud queda aprobada con el lote creado
+    if (solicitud) {
+      solicitud.estado = "aprobada";
+      solicitud.lote = lote._id;
+      solicitud.revisadoPor = req.usuario?._id || null;
+      solicitud.fechaRevision = new Date();
+      await solicitud.save();
+    }
 
 
     // ========================================

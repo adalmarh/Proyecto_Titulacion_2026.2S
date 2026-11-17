@@ -353,6 +353,7 @@ const soloAdminPuedeCambiar = (...campos) =>
 
 module.exports = {
   ROLES,
+  obtenerProductorPropio,
   filtroLotes,
   filtroProductores,
   filtroEventos,

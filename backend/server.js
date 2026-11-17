@@ -213,6 +213,12 @@ app.use(
   solicitudRoutes
 );
 
+// SOLICITUDES DE LOTE (el productor pide un lote nuevo)
+app.use(
+  "/api/solicitudes-lote",
+  require("./routes/solicitudLoteRoutes")
+);
+
 
 // ==========================================
 // RUTA NO ENCONTRADA

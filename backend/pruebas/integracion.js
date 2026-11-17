@@ -991,6 +991,53 @@ const ejecutarCasos = async () => {
 
   await caso("V03", "Sin sesión no se pueden consultar los avisos", "401", async () =>
     codigo(await http("GET", "/certificaciones/avisos/vencimientos"), 401));
+
+
+  grupo("13. Solicitudes de lote del productor");
+
+  // Preparación: el grupo 8 desactivó la cuenta del productor
+  await http("PATCH", `/usuarios/${D.uProd._id}/estado`, { token: T.admin, body: { activo: true } });
+
+  const pedido = {
+    cantidad: "15", unidad: "quintales", estadoGrano: "baba",
+    fechaSiembra: "2016-04-01",
+    fechaEstimadaCosecha: new Date(Date.now() + 45 * 86400000).toISOString().slice(0, 10),
+    mensaje: "Parcela junto al río"
+  };
+
+  await caso("SL01", "El productor solicita un lote nuevo", "201 · 680,39 kg a su nombre", async () => {
+    const r = await http("POST", "/solicitudes-lote", { token: T.prod, body: pedido });
+    D.SL1 = r.datos?.solicitud;
+    return {
+      ok: r.status === 201 && D.SL1?.cantidadKg === 680.39 && String(D.SL1?.productor?._id || D.SL1?.productor) === String(D.P1._id),
+      obtenido: `${r.status} · ${D.SL1?.cantidadKg} kg`
+    };
+  });
+
+  await caso("SL02", "Un certificador intenta solicitar un lote", "403", async () =>
+    codigo(await http("POST", "/solicitudes-lote", { token: T.cert, body: pedido }), 403));
+
+  await caso("SL03", "El administrador ve la solicitud pendiente", "Aparece en la lista", async () => {
+    const r = await http("GET", "/solicitudes-lote?estado=pendiente", { token: T.admin });
+    const esta = (r.datos?.solicitudes || []).some((x) => x._id === D.SL1?._id);
+    return { ok: r.status === 200 && esta, obtenido: `${r.status} · ${esta ? "aparece" : "no aparece"}` };
+  });
+
+  await caso("SL04", "Rechazar sin indicar el motivo", "400", async () =>
+    codigo(await http("PATCH", `/solicitudes-lote/${D.SL1?._id}/rechazar`, { token: T.admin, body: { motivo: "" } }), 400));
+
+  await caso("SL05", "El administrador crea el lote desde la solicitud", "201 · solicitud aprobada con el lote", async () => {
+    const r = await http("POST", "/lotes", { token: T.admin, body: { ...lote(D.P1, 680.39), estadoGrano: "baba", solicitudLote: D.SL1?._id } });
+    const lista = await http("GET", "/solicitudes-lote", { token: T.prod });
+    const s = (lista.datos?.solicitudes || []).find((x) => x._id === D.SL1?._id);
+    return {
+      ok: r.status === 201 && s?.estado === "aprobada" && s?.lote?.codigo === r.datos?.lote?.codigo,
+      obtenido: `${r.status} · ${s?.estado} · lote ${s?.lote?.codigo || "—"}`
+    };
+  });
+
+  await caso("SL06", "Usar la misma solicitud para otro lote", "400", async () =>
+    codigo(await http("POST", "/lotes", { token: T.admin, body: { ...lote(D.P1, 100), solicitudLote: D.SL1?._id } }), 400));
 };
 
 

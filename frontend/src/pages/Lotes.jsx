@@ -11,12 +11,14 @@ import {
   LuTriangleAlert,
   LuSprout,
   LuTractor,
-  LuArchive
+  LuArchive,
+  LuPackagePlus
 } from "react-icons/lu";
 
 import api from "../services/api";
 import Modal from "../components/Modal";
 import ModalQR from "../components/ModalQR";
+import { ModalSolicitudLote, PanelSolicitudesLote } from "../components/SolicitudesLote";
 import { usePermisos } from "../utils/permisos";
 import {
   NOMBRE_ESTADO_LOTE,
@@ -83,6 +85,12 @@ const Lotes = () => {
   const [errorForm, setErrorForm] = useState("");
 
   const [loteQR, setLoteQR] = useState(null);
+
+  // Solicitudes de lote: el productor las envía; el
+  // administrador crea el lote desde una de ellas
+  const [pidiendoLote, setPidiendoLote] = useState(false);
+  const [solicitudEnCurso, setSolicitudEnCurso] = useState(null);
+  const [recargarSolicitudes, setRecargarSolicitudes] = useState(0);
 
 
   // ========================================
@@ -232,9 +240,30 @@ const Lotes = () => {
     setAutollenado(null);
     setAutollenadoProd(null);
     setFormulario({ ...formularioVacio });
+    setSolicitudEnCurso(null);
     setErrorForm("");
     setMensaje("");
     setFormAbierto(true);
+  };
+
+  // Administrador: «Crear lote» desde una solicitud del productor.
+  // Abre el formulario de siempre con los datos de la solicitud
+  // (la ubicación se copia de la ficha del productor).
+  const crearDesdeSolicitud = (solicitud) => {
+    const productorId = idDe(solicitud.productor);
+    abrirNuevo();
+    setSolicitudEnCurso(solicitud);
+    elegirProductor(productorId);
+    setFormulario((anterior) => ({
+      ...anterior,
+      productor: productorId,
+      cantidad: String(solicitud.cantidadKg ?? ""),
+      unidad: "kg",
+      estadoGrano: solicitud.estadoGrano || "seco",
+      fechaSiembra: fechaCampo(solicitud.fechaSiembra) || anterior.fechaSiembra,
+      fechaEstimadaCosecha: fechaCampo(solicitud.fechaEstimadaCosecha) || anterior.fechaEstimadaCosecha,
+      descripcion: solicitud.mensaje || anterior.descripcion
+    }));
   };
 
   const abrirEdicion = (lote) => {
@@ -310,10 +339,17 @@ const Lotes = () => {
       } else {
         // el productor solo se envía al crear
         datos.productor = formulario.productor;
+        if (solicitudEnCurso) datos.solicitudLote = solicitudEnCurso._id;
         const respuesta = await api.post("/lotes", datos);
         setMensaje(
-          `Lote ${respuesta.data.lote?.codigo || ""} registrado correctamente`
+          solicitudEnCurso
+            ? `Lote ${respuesta.data.lote?.codigo || ""} registrado y solicitud de ${nombreCompleto(solicitudEnCurso.productor)} aprobada`
+            : `Lote ${respuesta.data.lote?.codigo || ""} registrado correctamente`
         );
+        if (solicitudEnCurso) {
+          setSolicitudEnCurso(null);
+          setRecargarSolicitudes((n) => n + 1);
+        }
       }
 
       setFormAbierto(false);
@@ -386,6 +422,13 @@ const Lotes = () => {
             Nuevo lote
           </button>
         )}
+
+        {permisos.solicitarLote && (
+          <button className="gs-btn gs-btn-principal" onClick={() => { setMensaje(""); setPidiendoLote(true); }}>
+            <LuPackagePlus aria-hidden="true" />
+            Solicitar nuevo lote
+          </button>
+        )}
       </div>
 
 
@@ -401,6 +444,17 @@ const Lotes = () => {
           <LuTriangleAlert aria-hidden="true" />
           {error}
         </div>
+      )}
+
+
+      {/* SOLICITUDES DE LOTE (productor: las suyas · administrador: pendientes) */}
+      {(permisos.solicitarLote || permisos.gestionarLotes) && (
+        <PanelSolicitudesLote
+          esAdmin={permisos.gestionarLotes}
+          recargar={recargarSolicitudes}
+          onMensaje={setMensaje}
+          onCrearLote={crearDesdeSolicitud}
+        />
       )}
 
 
@@ -608,13 +662,19 @@ const Lotes = () => {
       {/* FORMULARIO REGISTRAR / EDITAR */}
       {formAbierto && (
         <Modal
-          titulo={editando ? `Editar lote ${editando.codigo}` : "Nuevo lote de cacao"}
+          titulo={
+            editando
+              ? `Editar lote ${editando.codigo}`
+              : solicitudEnCurso
+                ? `Nuevo lote · solicitud de ${nombreCompleto(solicitudEnCurso.productor)}`
+                : "Nuevo lote de cacao"
+          }
           subtitulo={
             editando
               ? "El productor no se puede cambiar."
               : "El código del lote se genera automáticamente."
           }
-          onCerrar={() => setFormAbierto(false)}
+          onCerrar={() => { setFormAbierto(false); setSolicitudEnCurso(null); }}
           bloqueado={guardando}
           ancho
         >
@@ -636,7 +696,7 @@ const Lotes = () => {
                   name="productor"
                   value={formulario.productor}
                   onChange={cambiarCampo}
-                  disabled={Boolean(editando)}
+                  disabled={Boolean(editando) || Boolean(solicitudEnCurso)}
                   required
                 >
                   <option value="">Seleccione el productor</option>
@@ -698,7 +758,14 @@ const Lotes = () => {
                 <input id="l-estimada" type="date" name="fechaEstimadaCosecha" value={formulario.fechaEstimadaCosecha} onChange={cambiarCampo} />
               </div>
 
-              {!editando && formulario.productor && (
+              {!editando && solicitudEnCurso && (
+                <p className="gs-campo-ancho lt-autollenado">
+                  Cantidad, grano y fechas tomados de la solicitud del productor. Confirma la cantidad con el
+                  peso real del lote antes de guardar: al guardar, la solicitud queda aprobada.
+                </p>
+              )}
+
+              {!editando && !solicitudEnCurso && formulario.productor && (
                 <p className={`gs-campo-ancho lt-autollenado${autollenadoProd ? "" : " lt-autollenado-vacio"}`}>
                   {autollenadoProd
                     ? "Cantidad y fechas tomadas de la producción estimada del productor. Ajusta la cantidad con el peso real del lote."
@@ -780,6 +847,19 @@ const Lotes = () => {
             </div>
           </form>
         </Modal>
+      )}
+
+
+      {/* SOLICITAR UN LOTE NUEVO (productor) */}
+      {pidiendoLote && (
+        <ModalSolicitudLote
+          onCerrar={() => setPidiendoLote(false)}
+          onEnviada={(texto) => {
+            setPidiendoLote(false);
+            setMensaje(texto);
+            setRecargarSolicitudes((n) => n + 1);
+          }}
+        />
       )}
 
 

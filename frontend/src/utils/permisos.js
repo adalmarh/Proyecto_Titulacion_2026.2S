@@ -35,6 +35,8 @@ const es = (rol, ...roles) => roles.includes(rol);
 export const obtenerPermisos = (rol) => ({
   // Lotes
   gestionarLotes: es(rol, ROLES.ADMIN),
+  // El productor pide un lote nuevo; el administrador lo crea
+  solicitarLote: es(rol, ROLES.PRODUCTOR),
 
   // Productores
   gestionarProductores: es(rol, ROLES.ADMIN),

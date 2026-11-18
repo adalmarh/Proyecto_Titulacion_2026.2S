@@ -50,6 +50,12 @@ const REQUISITOS_GENERALES = [
   { clave: "sinInfestacion", nombre: "Granos libres de infestación (insectos vivos)" }
 ];
 
+// Único tipo de certificación del sistema: lo que RutaCacao
+// evalúa de verdad (el análisis de calidad de esta norma y la
+// trazabilidad del lote). Otros tipos (BPA, orgánica, sanitaria)
+// necesitarían sus propias evaluaciones: quedan como trabajo futuro.
+const TIPO_CERTIFICACION = "Calidad y trazabilidad del cacao fino de aroma (NTE INEN 176)";
+
 class ErrorAnalisis extends Error {}
 
 
@@ -148,6 +154,7 @@ const analisisParaGuardar = (entrada, resultado) => {
 
 module.exports = {
   NORMA,
+  TIPO_CERTIFICACION,
   PARAMETROS,
   REQUISITOS_GENERALES,
   ErrorAnalisis,

@@ -113,3 +113,27 @@ test("el PDF con análisis tiene el anexo técnico con el enlace a la norma", as
   );
   assert.match(sinAnalisis.toString("latin1"), /\/Count 1/, "certificados antiguos: una página");
 });
+
+test("la solicitud de certificación usa siempre el único tipo del sistema", async () => {
+  const { TIPO_CERTIFICACION } = require("../utils/normaInen176");
+  const Lote = require("../models/Lote");
+  const Productor = require("../models/Productor");
+  const { solicitarCertificacion } = require("../controllers/certificacionController");
+
+  let creada;
+  Lote.findById = () => { const l = { _id: "l1", productor: "p1", activo: true }; const q = { populate: () => q, select: () => q, then: (ok) => ok(l) }; return q; };
+  Productor.findOne = () => ({ select: async () => ({ _id: "p1" }) });
+  Certificacion.findOne = () => ({ sort: () => ({ select: async () => null }) });
+  Certificacion.exists = async () => false;
+  Certificacion.create = async (d) => { creada = { _id: "c9", ...d }; return creada; };
+  Certificacion.findById = () => { const q = { populate: () => q, then: (ok) => ok(creada) }; return q; };
+
+  const res = respuesta();
+  await solicitarCertificacion({ usuario: { _id: "u1", rol: "administrador" }, body: { lote: "l1", tipoCertificacion: "Producción Orgánica" } }, res);
+  assert.equal(res.estado, 201, res.datos?.mensaje);
+  assert.equal(creada.tipoCertificacion, TIPO_CERTIFICACION);
+
+  const sinLote = respuesta();
+  await solicitarCertificacion({ usuario: { _id: "u1", rol: "administrador" }, body: {} }, sinLote);
+  assert.equal(sinLote.estado, 400);
+});

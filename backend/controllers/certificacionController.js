@@ -18,7 +18,8 @@ const { datosEmpresa } = require("../utils/empresa");
 const {
   ErrorAnalisis,
   evaluarAnalisis,
-  analisisParaGuardar
+  analisisParaGuardar,
+  TIPO_CERTIFICACION
 } = require("../utils/normaInen176");
 const {
   ErrorIA,
@@ -61,7 +62,6 @@ const solicitarCertificacion = async (
 
     const {
       lote,
-      tipoCertificacion,
       datosCertificacion,
       observaciones
     } = req.body;
@@ -72,14 +72,13 @@ const solicitarCertificacion = async (
     // ========================================
 
     if (
-      !lote ||
-      !tipoCertificacion
+      !lote
     ) {
 
       return res.status(400).json({
 
         mensaje:
-          "El lote y el tipo de certificación son obligatorios"
+          "Selecciona el lote que quieres certificar"
 
       });
 
@@ -118,7 +117,9 @@ const solicitarCertificacion = async (
         solicitante:
           req.usuario._id,
 
-        tipoCertificacion,
+        // Siempre el único tipo del sistema (se ignora lo que
+        // envíe el formulario, por compatibilidad)
+        tipoCertificacion: TIPO_CERTIFICACION,
 
         datosCertificacion,
 

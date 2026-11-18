@@ -35,7 +35,7 @@ import { obtenerCertificadores } from "../services/usuarioService";
 import { usePermisos } from "../utils/permisos";
 import {
   NOMBRE_ESTADO_CERTIFICACION,
-  TIPOS_CERTIFICACION,
+  TIPO_CERTIFICACION,
   formatearFecha,
   nombreCompleto,
   idDe
@@ -53,7 +53,6 @@ import {
 
 const solicitudVacia = {
   lote: "",
-  tipoCertificacion: "",
   observacionesInspeccion: ""
 };
 
@@ -170,8 +169,8 @@ const Certificaciones = () => {
     evento.preventDefault();
     setErrorModal("");
 
-    if (!solicitud.lote || !solicitud.tipoCertificacion) {
-      setErrorModal("Selecciona el lote y el tipo de certificación.");
+    if (!solicitud.lote) {
+      setErrorModal("Selecciona el lote que quieres certificar.");
       return;
     }
 
@@ -180,7 +179,6 @@ const Certificaciones = () => {
 
       await crearCertificacion({
         lote: solicitud.lote,
-        tipoCertificacion: solicitud.tipoCertificacion,
         datosCertificacion: {
           observacionesInspeccion: solicitud.observacionesInspeccion.trim()
         }
@@ -583,20 +581,16 @@ const Certificaciones = () => {
                 </select>
               </div>
 
+              {/* Un solo tipo: lo que el sistema evalúa de verdad */}
               <div className="gs-campo gs-campo-ancho">
-                <label htmlFor="c-tipo">Tipo de certificación *</label>
-                <select
-                  id="c-tipo"
-                  name="tipoCertificacion"
-                  value={solicitud.tipoCertificacion}
-                  onChange={cambiarSolicitud}
-                  required
-                >
-                  <option value="">Seleccione el tipo</option>
-                  {TIPOS_CERTIFICACION.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
+                <span className="ct-tipo-titulo">Certificación</span>
+                <p className="ct-tipo-unico">
+                  <strong>{TIPO_CERTIFICACION}</strong>
+                  <span>
+                    El certificador analiza una muestra del lote según la norma (humedad, prueba de corte y
+                    defectos), le asigna el grado 1, 2 o 3 y revisa su trazabilidad.
+                  </span>
+                </p>
               </div>
 
               <div className="gs-campo gs-campo-ancho">

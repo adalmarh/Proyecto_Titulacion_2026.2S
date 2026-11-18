@@ -421,10 +421,12 @@ const ejecutarCasos = async () => {
 
   grupo("6. Certificaciones");
 
-  await caso("C01", "El productor solicita la certificación de su lote", "201 · pendiente", async () => {
+  await caso("C01", "El productor solicita la certificación de su lote", "201 · pendiente · tipo único NTE INEN 176", async () => {
+    // Aunque se envíe otro tipo, el sistema usa siempre el único tipo
     const r = await http("POST", "/certificaciones", { token: T.prod, body: { lote: D.L1._id, tipoCertificacion: "Producción Orgánica" } });
     D.C1 = r.datos?.certificacion;
-    return { ok: r.status === 201 && D.C1?.estado === "pendiente", obtenido: `${r.status} · ${D.C1?.estado}` };
+    const tipoUnico = D.C1?.tipoCertificacion === "Calidad y trazabilidad del cacao fino de aroma (NTE INEN 176)";
+    return { ok: r.status === 201 && D.C1?.estado === "pendiente" && tipoUnico, obtenido: `${r.status} · ${D.C1?.estado} · ${D.C1?.tipoCertificacion}` };
   });
 
   await caso("C02", "El productor solicita sobre un lote ajeno", "403", async () =>

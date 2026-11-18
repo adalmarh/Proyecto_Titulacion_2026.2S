@@ -12,7 +12,8 @@
     "eliminar-asociaciones": "node scripts/eliminarAsociaciones.js",
     "completar-ubicaciones": "node scripts/completarUbicacionProductores.js",
     "convertir-cantidades": "node scripts/convertirCantidadesLotes.js",
-    "copiar-base": "node scripts/copiarBaseDatos.js"
+    "copiar-base": "node scripts/copiarBaseDatos.js",
+    "unificar-tipo": "node scripts/unificarTipoCertificacion.js"
   },
   "keywords": [],
   "author": "",

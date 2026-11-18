@@ -112,7 +112,7 @@ const EstadoCertificacion = ({ certificacion }) => {
       <p className="cp-estado cp-estado-vigente">
         <LuShieldCheck aria-hidden="true" />
         <span>
-          Certificación {vigente.tipoCertificacion.toLowerCase()} vigente
+          Certificación vigente: {vigente.tipoCertificacion}
           {vigente.fechaVencimiento &&
             ` hasta el ${formatearFecha(vigente.fechaVencimiento)}`}
         </span>

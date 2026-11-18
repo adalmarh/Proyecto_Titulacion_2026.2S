@@ -72,14 +72,10 @@ export const nombreCompleto = (persona) =>
     : "—";
 
 
-// Tipos de certificación que se pueden solicitar
-export const TIPOS_CERTIFICACION = [
-  "Buenas Prácticas Agrícolas",
-  "Producción Orgánica",
-  "Calidad del Producto",
-  "Trazabilidad Agrícola",
-  "Certificación Sanitaria"
-];
+// Único tipo de certificación del sistema (el mismo que usa el
+// backend en utils/normaInen176.js). Otros tipos (BPA, orgánica,
+// sanitaria) necesitarían sus propias evaluaciones.
+export const TIPO_CERTIFICACION = "Calidad y trazabilidad del cacao fino de aroma (NTE INEN 176)";
 
 // ---------- Cantidad del lote ----------
 // Se guarda siempre en kg; se puede escribir en quintales.

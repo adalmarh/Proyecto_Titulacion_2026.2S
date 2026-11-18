@@ -741,6 +741,7 @@ const ejecutarCasos = async () => {
     aceptaPrivacidad: true,
     cantidadEstimada: "20",
     unidadEstimada: "quintales",
+    estadoGrano: "baba",
     fechaSiembra: "2015-03-10",
     fechaEstimadaCosecha: new Date(Date.now() + 60 * 86400000).toISOString().slice(0, 10),
     ...extra
@@ -842,11 +843,11 @@ const ejecutarCasos = async () => {
   await caso("SC27", "Solicitud sin la cantidad aproximada de cacao", "400", async () =>
     codigo(await http("POST", "/public/solicitudes", { body: solicitud({ email: "sin.cantidad@finca.ec", cantidadEstimada: "" }) }), 400));
 
-  await caso("SC28", "La ficha del productor recibe la producción estimada en kg", "907,18 kg y fecha de siembra 2015-03-10", async () => {
+  await caso("SC28", "La ficha del productor recibe la producción estimada en kg", "907,18 kg en baba y fecha de siembra 2015-03-10", async () => {
     const p = D.fichaRosa?.produccion || {};
     return {
-      ok: p.cantidadEstimadaKg === 907.18 && String(p.fechaSiembra || "").startsWith("2015-03-10") && Boolean(p.fechaEstimadaCosecha),
-      obtenido: `${p.cantidadEstimadaKg ?? "sin cantidad"} kg · siembra ${String(p.fechaSiembra || "—").slice(0, 10)}`
+      ok: p.cantidadEstimadaKg === 907.18 && p.estadoGrano === "baba" && String(p.fechaSiembra || "").startsWith("2015-03-10") && Boolean(p.fechaEstimadaCosecha),
+      obtenido: `${p.cantidadEstimadaKg ?? "sin cantidad"} kg · ${p.estadoGrano || "sin tipo"} · siembra ${String(p.fechaSiembra || "—").slice(0, 10)}`
     };
   });
 

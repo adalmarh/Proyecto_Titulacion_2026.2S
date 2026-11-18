@@ -328,6 +328,8 @@ const Solicitudes = () => {
                 <dd>{revisando.direccion || "—"}</dd>
                 <dt>Cosecha aprox.</dt>
                 <dd>{revisando.cantidadEstimadaKg ? formatearCantidad(revisando.cantidadEstimadaKg) : "—"}</dd>
+                <dt>Tipo de cacao</dt>
+                <dd>{revisando.estadoGrano === "baba" ? "En baba (fresco)" : revisando.estadoGrano === "seco" ? "Seco (fermentado y secado)" : "—"}</dd>
                 <dt>Siembra</dt>
                 <dd>{revisando.fechaSiembra ? formatearFecha(revisando.fechaSiembra) : "—"}</dd>
                 <dt>Próxima cosecha</dt>

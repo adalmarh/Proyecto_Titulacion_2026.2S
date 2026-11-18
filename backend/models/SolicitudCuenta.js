@@ -98,6 +98,13 @@ const solicitudCuentaSchema = new mongoose.Schema(
       default: null
     },
 
+    // Tipo de cacao que entrega: seco o en baba
+    estadoGrano: {
+      type: String,
+      enum: ["seco", "baba", null],
+      default: null
+    },
+
     fechaSiembra: {
       type: Date,
       default: null

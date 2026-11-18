@@ -50,6 +50,7 @@ ubicacion: {
 // Al registrar un lote nuevo llena la cantidad y las fechas.
 produccion: {
   cantidadEstimadaKg: { type: Number, default: null },
+  estadoGrano: { type: String, enum: ["seco", "baba", null], default: null },
   fechaSiembra: { type: Date, default: null },
   fechaEstimadaCosecha: { type: Date, default: null }
 },

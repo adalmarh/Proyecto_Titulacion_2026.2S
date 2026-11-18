@@ -14,7 +14,7 @@ const Productor = require("../models/Productor");
 const { actualizarProductor } = require("../controllers/productorController");
 
 const HOY = new Date("2026-11-16T12:00:00Z");
-const valida = { cantidadEstimada: "1200", unidadEstimada: "kg", fechaSiembra: "2018-05-01", fechaEstimadaCosecha: "2027-01-20" };
+const valida = { cantidadEstimada: "1200", unidadEstimada: "kg", estadoGrano: "baba", fechaSiembra: "2018-05-01", fechaEstimadaCosecha: "2027-01-20" };
 
 const respuesta = () => {
   const res = { estado: 200 };
@@ -27,14 +27,16 @@ const respuesta = () => {
 test("datos válidos: cantidad en kg y fechas", () => {
   const r = validarProduccion(valida, { obligatorio: true, hoy: HOY });
   assert.equal(r.cantidadEstimadaKg, 1200);
+  assert.equal(r.estadoGrano, "baba");
   assert.equal(r.fechaSiembra.toISOString().slice(0, 10), "2018-05-01");
   assert.equal(r.fechaEstimadaCosecha.toISOString().slice(0, 10), "2027-01-20");
   assert.equal(validarProduccion({ ...valida, cantidadEstimada: "2,5", unidadEstimada: "quintales" }, { hoy: HOY }).cantidadEstimadaKg, 113.4);
 });
 
 test("en la ficha del productor los datos son opcionales", () => {
-  assert.deepEqual(validarProduccion({}, { hoy: HOY }), { cantidadEstimadaKg: null, fechaSiembra: null, fechaEstimadaCosecha: null });
+  assert.deepEqual(validarProduccion({}, { hoy: HOY }), { cantidadEstimadaKg: null, estadoGrano: null, fechaSiembra: null, fechaEstimadaCosecha: null });
   assert.throws(() => validarProduccion({}, { obligatorio: true, hoy: HOY }), /cantidad aproximada/);
+  assert.throws(() => validarProduccion({ ...valida, estadoGrano: "" }, { obligatorio: true, hoy: HOY }), /seco o en baba/);
 });
 
 test("rechaza fechas y cantidades fuera de lugar", () => {
@@ -47,6 +49,7 @@ test("rechaza fechas y cantidades fuera de lugar", () => {
   malo({ cantidadEstimada: "-3" }, /mayor que cero/);
   malo({ cantidadEstimada: "500000" }, /demasiado alta/);
   malo({ unidadEstimada: "libras" }, /kg o quintales/);
+  malo({ estadoGrano: "tostado" }, /seco.*baba/);
 });
 
 test("al editar la ficha, la producción se valida y se guarda en kg", async () => {

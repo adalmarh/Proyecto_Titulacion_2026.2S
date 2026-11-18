@@ -12,7 +12,7 @@ import {
 } from "react-icons/lu";
 
 import api from "../services/api";
-import { PROVINCIAS_ECUADOR, UNIDADES_ENTRADA } from "../utils/formatos";
+import { PROVINCIAS_ECUADOR, UNIDADES_ENTRADA, ESTADOS_GRANO } from "../utils/formatos";
 
 // Estilos: styles/sistema.css (importado en main.jsx)
 
@@ -37,6 +37,7 @@ const formularioVacio = {
   referencia: "",
   cantidadEstimada: "",
   unidadEstimada: "kg",
+  estadoGrano: "",
   fechaSiembra: "",
   fechaEstimadaCosecha: ""
 };
@@ -141,6 +142,7 @@ const Productores = () => {
       // La producción se guarda en kg
       cantidadEstimada: p.produccion?.cantidadEstimadaKg ?? "",
       unidadEstimada: "kg",
+      estadoGrano: p.produccion?.estadoGrano || "",
       fechaSiembra: fechaCampo(p.produccion?.fechaSiembra),
       fechaEstimadaCosecha: fechaCampo(p.produccion?.fechaEstimadaCosecha)
     });
@@ -166,12 +168,12 @@ const Productores = () => {
 
     const {
       provincia, canton, parroquia, referencia,
-      cantidadEstimada, unidadEstimada, fechaSiembra, fechaEstimadaCosecha,
+      cantidadEstimada, unidadEstimada, estadoGrano, fechaSiembra, fechaEstimadaCosecha,
       ...personales
     } = formulario;
     const datos = {
       ...personales,
-      produccion: { cantidadEstimada, unidadEstimada, fechaSiembra, fechaEstimadaCosecha },
+      produccion: { cantidadEstimada, unidadEstimada, estadoGrano, fechaSiembra, fechaEstimadaCosecha },
       ubicacion: {
         provincia,
         canton: canton.trim(),
@@ -483,7 +485,7 @@ const Productores = () => {
 
                 <p className="gs-subtitulo-form gs-campo-ancho">
                   Producción estimada
-                  <span>Llena sola la cantidad y las fechas de cada lote nuevo de este productor.</span>
+                  <span>Llena sola la cantidad, el tipo de cacao y las fechas de cada lote nuevo de este productor.</span>
                 </p>
 
                 <div className="gs-campo">
@@ -496,6 +498,16 @@ const Productores = () => {
                   <select id="p-unidad" name="unidadEstimada" value={formulario.unidadEstimada} onChange={cambiarCampo}>
                     {UNIDADES_ENTRADA.map((u) => (
                       <option key={u.valor} value={u.valor}>{u.texto}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="gs-campo">
+                  <label htmlFor="p-grano">Tipo de cacao que entrega</label>
+                  <select id="p-grano" name="estadoGrano" value={formulario.estadoGrano} onChange={cambiarCampo}>
+                    <option value="">Sin indicar</option>
+                    {Object.entries(ESTADOS_GRANO).map(([valor, texto]) => (
+                      <option key={valor} value={valor}>{texto}</option>
                     ))}
                   </select>
                 </div>

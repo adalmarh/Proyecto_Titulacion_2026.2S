@@ -349,6 +349,7 @@ const ubicacionFinca = (s) => ({
 // Producción estimada que pasa a la ficha del productor
 const produccionDeSolicitud = (s) => ({
   cantidadEstimadaKg: s.cantidadEstimadaKg ?? null,
+  estadoGrano: s.estadoGrano ?? null,
   fechaSiembra: s.fechaSiembra ?? null,
   fechaEstimadaCosecha: s.fechaEstimadaCosecha ?? null
 });

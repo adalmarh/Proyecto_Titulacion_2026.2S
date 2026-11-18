@@ -5,13 +5,15 @@
 // administrador puede corregir en su ficha:
 //   - cantidad aproximada por cosecha (se guarda en kg; se
 //     puede escribir en quintales, como en el lote)
+//   - tipo de cacao que entrega: seco o en baba
 //   - fecha de siembra del cacaotal
 //   - fecha estimada de la próxima cosecha
 // Al registrar un lote nuevo, estos datos llenan solos la
-// cantidad y las fechas (el administrador puede cambiarlos).
+// cantidad, el tipo de cacao y las fechas (el administrador
+// puede cambiarlos).
 // ==========================================================
 
-const { aKilogramos, ErrorCantidad } = require("./cantidades");
+const { aKilogramos, estadoGranoValido, ErrorCantidad } = require("./cantidades");
 
 class ErrorProduccion extends Error {}
 
@@ -29,15 +31,16 @@ const aFecha = (valor) => {
 
 
 // Valida los datos. Con obligatorio = true (solicitud de cuenta)
-// los tres datos son necesarios; en la ficha del productor son
+// los cuatro datos son necesarios; en la ficha del productor son
 // opcionales, pero si se escriben deben ser correctos.
-// Devuelve { cantidadEstimadaKg, fechaSiembra, fechaEstimadaCosecha }
+// Devuelve { cantidadEstimadaKg, estadoGrano, fechaSiembra, fechaEstimadaCosecha }
 // con null en los que quedaron vacíos.
 const validarProduccion = (datos = {}, { obligatorio = false, hoy = new Date() } = {}) => {
-  const { cantidadEstimada, unidadEstimada, fechaSiembra, fechaEstimadaCosecha } = datos || {};
+  const { cantidadEstimada, unidadEstimada, estadoGrano, fechaSiembra, fechaEstimadaCosecha } = datos || {};
 
   if (obligatorio) {
     if (vacio(cantidadEstimada)) throw new ErrorProduccion("Indica la cantidad aproximada de cacao que da tu cosecha");
+    if (vacio(estadoGrano)) throw new ErrorProduccion("Indica si entregas tu cacao seco o en baba");
     if (vacio(fechaSiembra)) throw new ErrorProduccion("Indica la fecha de siembra de tu cacaotal");
     if (vacio(fechaEstimadaCosecha)) throw new ErrorProduccion("Indica la fecha estimada de tu próxima cosecha");
   }
@@ -55,6 +58,17 @@ const validarProduccion = (datos = {}, { obligatorio = false, hoy = new Date() }
     }
     if (cantidadEstimadaKg > MAX_KG) {
       throw new ErrorProduccion("La cantidad aproximada parece demasiado alta (máximo 100 000 kg por cosecha)");
+    }
+  }
+
+  // ---------- Tipo de cacao (seco o en baba) ----------
+  let grano = null;
+  if (!vacio(estadoGrano)) {
+    try {
+      grano = estadoGranoValido(estadoGrano);
+    } catch (error) {
+      if (error instanceof ErrorCantidad) throw new ErrorProduccion(error.message);
+      throw error;
     }
   }
 
@@ -83,6 +97,7 @@ const validarProduccion = (datos = {}, { obligatorio = false, hoy = new Date() }
 
   return {
     cantidadEstimadaKg,
+    estadoGrano: grano,
     fechaSiembra: siembra,
     fechaEstimadaCosecha: cosecha
   };

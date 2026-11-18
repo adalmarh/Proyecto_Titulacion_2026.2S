@@ -38,6 +38,7 @@ const base = {
   rolSolicitado: "productor",
   cantidadEstimada: "20",
   unidadEstimada: "quintales",
+  estadoGrano: "seco",
   fechaSiembra: "2015-03-10",
   fechaEstimadaCosecha: "2026-12-15"
 };
@@ -130,9 +131,11 @@ test("la producción estimada es obligatoria y pasa a la ficha en kg", () => {
   falla({ ...base, fechaSiembra: "" }, "fecha de siembra");
   falla({ ...base, fechaEstimadaCosecha: "" }, "próxima cosecha");
   falla({ ...base, cantidadEstimada: "0" }, "mayor que cero");
+  falla({ ...base, estadoGrano: "" }, "seco o en baba");
 
   const produccion = produccionDeSolicitud(validarDatosSolicitud(base));
   assert.equal(produccion.cantidadEstimadaKg, 907.18, "20 quintales = 907,18 kg");
+  assert.equal(produccion.estadoGrano, "seco");
   assert.equal(produccion.fechaSiembra.toISOString().slice(0, 10), "2015-03-10");
   assert.equal(produccion.fechaEstimadaCosecha.toISOString().slice(0, 10), "2026-12-15");
 });

@@ -24,7 +24,7 @@ import {
 
 import api from "../services/api";
 import { AuthContext } from "../context/AuthContext";
-import { PROVINCIAS_ECUADOR, UNIDADES_ENTRADA, KG_POR_QUINTAL, numeroEC } from "../utils/formatos";
+import { PROVINCIAS_ECUADOR, UNIDADES_ENTRADA, ESTADOS_GRANO, KG_POR_QUINTAL, numeroEC } from "../utils/formatos";
 import fondoLogin from "../assets/fondo-login.jpg";
 
 
@@ -47,6 +47,7 @@ const formularioVacio = {
   direccion: "",
   cantidadEstimada: "",
   unidadEstimada: "quintales",
+  estadoGrano: "",
   fechaSiembra: "",
   fechaEstimadaCosecha: "",
   email: "",
@@ -166,6 +167,7 @@ const SolicitarCuenta = () => {
         direccion: formulario.direccion,
         cantidadEstimada: formulario.cantidadEstimada,
         unidadEstimada: formulario.unidadEstimada,
+        estadoGrano: formulario.estadoGrano,
         fechaSiembra: formulario.fechaSiembra,
         fechaEstimadaCosecha: formulario.fechaEstimadaCosecha,
         email: formulario.email,
@@ -401,6 +403,20 @@ const SolicitarCuenta = () => {
                     <select id="s-unidad" name="unidadEstimada" value={formulario.unidadEstimada} onChange={cambiar} required>
                       {UNIDADES_ENTRADA.map((u) => (
                         <option key={u.valor} value={u.valor}>{u.texto}</option>
+                      ))}
+                    </select>
+                  </Campo>
+
+                  <Campo
+                    id="s-grano"
+                    etiqueta="Tipo de cacao que entregas *"
+                    icono={LuSprout}
+                    ayuda="Seco: fermentado y secado. En baba: grano fresco, recién sacado de la mazorca."
+                  >
+                    <select id="s-grano" name="estadoGrano" value={formulario.estadoGrano} onChange={cambiar} required>
+                      <option value="">Selecciona</option>
+                      {Object.entries(ESTADOS_GRANO).map(([valor, texto]) => (
+                        <option key={valor} value={valor}>{texto}</option>
                       ))}
                     </select>
                   </Campo>

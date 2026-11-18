@@ -170,12 +170,13 @@ const Lotes = () => {
 
   const produccionDelProductor = (productorId) => {
     const prod = productores.find((x) => x._id === productorId)?.produccion;
-    if (!prod || (!prod.cantidadEstimadaKg && !prod.fechaSiembra && !prod.fechaEstimadaCosecha)) {
+    if (!prod || (!prod.cantidadEstimadaKg && !prod.estadoGrano && !prod.fechaSiembra && !prod.fechaEstimadaCosecha)) {
       return null;
     }
     return {
       valores: {
         cantidad: prod.cantidadEstimadaKg ? String(prod.cantidadEstimadaKg) : "",
+        estadoGrano: prod.estadoGrano || "",
         fechaSiembra: fechaCampo(prod.fechaSiembra),
         fechaEstimadaCosecha: fechaCampo(prod.fechaEstimadaCosecha)
       }
@@ -220,6 +221,15 @@ const Lotes = () => {
           if (campo === "cantidad" && nuevo.cantidad) nuevo.unidad = "kg";
         }
       });
+
+      // Tipo de cacao: el campo nunca está vacío (por defecto «seco»),
+      // así que se cambia si sigue en el valor por defecto o en el
+      // que se había llenado solo
+      const granoActual = anterior.estadoGrano || formularioVacio.estadoGrano;
+      const granoPuesto = autollenadoProd?.valores?.estadoGrano || formularioVacio.estadoGrano;
+      if (granoActual === granoPuesto) {
+        nuevo.estadoGrano = produccion?.valores?.estadoGrano || formularioVacio.estadoGrano;
+      }
 
       CAMPOS_UBICACION.forEach(([campo, origen]) => {
         const actual = (anterior[campo] || "").trim();
@@ -768,7 +778,7 @@ const Lotes = () => {
               {!editando && !solicitudEnCurso && formulario.productor && (
                 <p className={`gs-campo-ancho lt-autollenado${autollenadoProd ? "" : " lt-autollenado-vacio"}`}>
                   {autollenadoProd
-                    ? "Cantidad y fechas tomadas de la producción estimada del productor. Ajusta la cantidad con el peso real del lote."
+                    ? "Cantidad, tipo de cacao y fechas tomados de la producción estimada del productor. Ajusta la cantidad con el peso real del lote."
                     : "Este productor aún no tiene producción estimada: escríbela aquí o complétala en Productores."}
                   {autollenadoProd && formulario.fechaEstimadaCosecha &&
                     formulario.fechaEstimadaCosecha === autollenadoProd.valores.fechaEstimadaCosecha &&

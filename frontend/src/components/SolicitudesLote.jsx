@@ -73,6 +73,7 @@ export const ModalSolicitudLote = ({ onCerrar, onEnviada }) => {
         setFormulario((f) => ({
           ...f,
           cantidad: f.cantidad || (prod.cantidadEstimadaKg ? String(Math.round((prod.cantidadEstimadaKg / KG_POR_QUINTAL) * 100) / 100) : ""),
+          estadoGrano: prod.estadoGrano || f.estadoGrano,
           fechaSiembra: f.fechaSiembra || fechaCampo(prod.fechaSiembra),
           fechaEstimadaCosecha: f.fechaEstimadaCosecha || fechaCampo(prod.fechaEstimadaCosecha)
         }));

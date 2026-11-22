@@ -139,6 +139,20 @@ const solicitudCuentaSchema = new mongoose.Schema(
       default: null
     },
 
+    // Resultado del correo que avisa la revisión al solicitante
+    // (utils/correosSolicitud.js)
+    avisoCorreo: {
+      estado: {
+        type: String,
+        enum: ["enviado", "fallido", "sin_configurar", null],
+        default: null
+      },
+      fecha: {
+        type: Date,
+        default: null
+      }
+    },
+
     fechaRevision: {
       type: Date,
       default: null

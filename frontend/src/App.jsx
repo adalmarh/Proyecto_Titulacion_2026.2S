@@ -31,6 +31,7 @@ import Certificaciones from "./pages/Certificaciones";
 import CodigosQR from "./pages/CodigosQR";
 import ConsultaPublicaQR from "./pages/ConsultaPublicaQR";
 import SolicitarCuenta from "./pages/SolicitarCuenta";
+import ConsultarSolicitud from "./pages/ConsultarSolicitud";
 import Solicitudes from "./pages/Solicitudes";
 import MiPerfil from "./pages/MiPerfil";
 import Privacidad from "./pages/Privacidad";
@@ -229,6 +230,12 @@ const App = () => {
         <Route
           path="/solicitar-cuenta"
           element={<SolicitarCuenta />}
+        />
+
+        {/* CONSULTAR MI SOLICITUD (público) */}
+        <Route
+          path="/consultar-solicitud"
+          element={<ConsultarSolicitud />}
         />
 
 

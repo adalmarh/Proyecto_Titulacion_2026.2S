@@ -174,6 +174,11 @@ const Login = () => {
             <Link to="/solicitar-cuenta">Solicitar acceso</Link>
           </p>
 
+          <p className="login-alternativa">
+            ¿Ya enviaste tu solicitud?{" "}
+            <Link to="/consultar-solicitud">Consultar su estado</Link>
+          </p>
+
           <p className="login-legal">
             <Link to="/privacidad">Aviso de privacidad</Link>
           </p>

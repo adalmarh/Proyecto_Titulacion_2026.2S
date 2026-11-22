@@ -178,7 +178,11 @@ const iniciarServidor = async () => {
       // los demás casos no se bloqueen entre sí
       LOGIN_MAX_INTENTOS: "5",
       LOGIN_MAX_INTENTOS_RED: "100",
-      QR_FRONTEND_URL: "http://localhost:5173"
+      QR_FRONTEND_URL: "http://localhost:5173",
+      // Las pruebas NUNCA envían correos reales, aunque el
+      // .env tenga configurado Brevo
+      BREVO_API_KEY: "",
+      CORREO_REMITENTE: ""
     }
   });
 
@@ -828,11 +832,29 @@ const ejecutarCasos = async () => {
     codigo(await http("PATCH", `/solicitudes/${sol("luis@finca.ec")._id}/aprobar`, { token: T.cert2, body: {} }), 403));
 
   await caso("SC15", "El administrador aprueba a un productor nuevo", "200 · cuenta y ficha de productor", async () => {
+    // Antes de aprobar: la persona consulta su solicitud pendiente
+    D.consultaPendiente = await http("POST", "/public/solicitudes/estado", { body: { email: "rosa@finca.ec", password: CLAVE } });
     const r = await http("PATCH", `/solicitudes/${sol("rosa@finca.ec")._id}/aprobar`, { token: T.admin, body: {} });
+    D.aprobacionRosa = r;
     const prods = lista((await http("GET", "/productores", { token: T.admin })).datos, "productores");
     const ficha = prods.find((p) => p.cedula === "0912345675");
     D.fichaRosa = ficha;
     return { ok: r.status === 200 && Boolean(ficha), obtenido: `${r.status} · ficha ${ficha ? "creada" : "no encontrada"}` };
+  });
+
+  await caso("SC30", "Al aprobar se registra el aviso por correo (en pruebas, sin enviar)", "avisoCorreo = sin_configurar", async () => {
+    const aviso = D.aprobacionRosa?.datos?.avisoCorreo?.estado;
+    return { ok: aviso === "sin_configurar", obtenido: `avisoCorreo = ${aviso}` };
+  });
+
+  await caso("SC31", "La persona consulta su solicitud con su correo y contraseña", "pendiente antes · aprobada después · 404 con otra clave", async () => {
+    const despues = await http("POST", "/public/solicitudes/estado", { body: { email: "rosa@finca.ec", password: CLAVE } });
+    const mala = await http("POST", "/public/solicitudes/estado", { body: { email: "rosa@finca.ec", password: "otra-clave" } });
+    const antes = D.consultaPendiente?.datos?.estado;
+    return {
+      ok: antes === "pendiente" && despues.datos?.estado === "aprobada" && mala.status === 404,
+      obtenido: `antes ${antes} · después ${despues.datos?.estado} · otra clave ${mala.status}`
+    };
   });
 
   await caso("SC24", "La ficha del productor recibe el celular y la ubicación de la finca", "Celular, dirección y ubicación completos", async () => ({
@@ -842,7 +864,7 @@ const ejecutarCasos = async () => {
     obtenido: `${D.fichaRosa?.telefono || "sin celular"} · ${D.fichaRosa?.direccion || "sin dirección"} · cantón ${D.fichaRosa?.ubicacion?.canton || "—"}`
   }));
 
-  await caso("SC27", "Solicitud sin la cantidad aproximada de cacao", "400", async () =>
+  await caso("SC29", "Solicitud sin la cantidad aproximada de cacao", "400", async () =>
     codigo(await http("POST", "/public/solicitudes", { body: solicitud({ email: "sin.cantidad@finca.ec", cantidadEstimada: "" }) }), 400));
 
   await caso("SC28", "La ficha del productor recibe la producción estimada en kg", "907,18 kg en baba y fecha de siembra 2015-03-10", async () => {

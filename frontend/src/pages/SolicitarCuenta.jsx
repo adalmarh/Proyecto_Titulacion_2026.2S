@@ -243,8 +243,9 @@ const SolicitarCuenta = () => {
                 <strong>{formulario.email}</strong> y la contraseña que elegiste.
               </p>
               <p>
-                Si intentas entrar antes, el sistema te dirá si tu solicitud
-                sigue pendiente.
+                Cuando la revisen te enviaremos un correo a <strong>{formulario.email}</strong>.
+                Si no lo ves, revisa la carpeta de spam o{" "}
+                <Link to="/consultar-solicitud">consulta el estado de tu solicitud</Link>.
               </p>
               <Link to="/" className="login-boton registro-volver">
                 Ir al inicio de sesión

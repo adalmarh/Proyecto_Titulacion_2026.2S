@@ -49,6 +49,14 @@ services:
         sync: false
       - key: EMPRESA_CIUDAD
         sync: false
+      # Aviso por correo de la solicitud de cuenta (Brevo, API HTTPS:
+      # el plan gratuito de Render bloquea SMTP)
+      - key: BREVO_API_KEY
+        sync: false
+      - key: CORREO_REMITENTE
+        sync: false
+      - key: CORREO_REMITENTE_NOMBRE
+        sync: false
       # Asistente de IA para redactar el dictamen (Google AI Studio)
       - key: GEMINI_API_KEY
         sync: false

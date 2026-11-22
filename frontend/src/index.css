@@ -732,3 +732,69 @@ p.registro-ayuda {
   }
 
 }
+
+
+/* ---------- Consultar mi solicitud ---------- */
+
+.cs-resultado {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 14px 0;
+  padding: 14px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.cs-resultado > svg {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin-top: 1px;
+}
+
+.cs-resultado strong {
+  display: block;
+  font-size: 16px;
+}
+
+.cs-resultado span {
+  display: block;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.cs-resultado p {
+  margin: 8px 0 0;
+}
+
+.cs-pendiente { background: #fffbeb; color: #7b341e; border: 1px solid #fbd38d; }
+.cs-aprobada { background: #f0fff4; color: #22543d; border: 1px solid #9ae6b4; }
+.cs-rechazada { background: #fff5f5; color: #822727; border: 1px solid #feb2b2; }
+
+.cs-motivo {
+  font-weight: 600;
+}
+
+.login-boton.cs-accion {
+  display: inline-flex;
+  width: auto;
+  margin-top: 10px;
+  padding: 9px 16px;
+  text-decoration: none;
+}
+
+.cs-icono-pie {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+  margin-right: 4px;
+}
+
+.login-boton > svg {
+  width: 18px;
+  height: 18px;
+  margin-right: 6px;
+  vertical-align: -3px;
+}

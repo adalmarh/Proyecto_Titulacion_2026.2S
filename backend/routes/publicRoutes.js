@@ -9,7 +9,8 @@ const {
 } = require("../controllers/certificacionController");
 
 const {
-  crearSolicitud
+  crearSolicitud,
+  consultarEstadoSolicitud
 } = require("../controllers/solicitudController");
 
 const crearLimitador = require("../utils/limitador");
@@ -65,6 +66,23 @@ router.post(
     mensaje: "Se enviaron demasiadas solicitudes desde esta red. Intenta de nuevo en una hora."
   }),
   crearSolicitud
+);
+
+
+// ==========================================
+// CONSULTAR EL ESTADO DE MI SOLICITUD
+// Con el correo y la contraseña de la solicitud.
+// Máximo 10 consultas cada 15 minutos por red.
+// ==========================================
+
+router.post(
+  "/solicitudes/estado",
+  crearLimitador({
+    maximo: Number(process.env.LIMITE_CONSULTAS_SOLICITUD) || 10,
+    ventanaMs: 15 * 60 * 1000,
+    mensaje: "Demasiadas consultas desde esta red. Intenta de nuevo en 15 minutos."
+  }),
+  consultarEstadoSolicitud
 );
 
 

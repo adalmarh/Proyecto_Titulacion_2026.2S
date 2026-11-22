@@ -4,6 +4,7 @@ const {
   validarProduccion
 } = require("../utils/produccionEstimada");
 const bcrypt = require("bcryptjs");
+const { avisarRevision } = require("../utils/correosSolicitud");
 
 const SolicitudCuenta = require("../models/SolicitudCuenta");
 const Usuario = require("../models/Usuario");
@@ -355,6 +356,20 @@ const produccionDeSolicitud = (s) => ({
 });
 
 
+// Envía el correo de aviso y guarda su resultado. Nunca
+// lanza errores: la revisión ya quedó guardada.
+const registrarAviso = async (solicitud) => {
+  try {
+    const aviso = await avisarRevision(solicitud);
+    await SolicitudCuenta.updateOne({ _id: solicitud._id }, { $set: { avisoCorreo: aviso } });
+    return aviso;
+  } catch (error) {
+    console.error("No se pudo registrar el aviso por correo:", error.message);
+    return { estado: "fallido", fecha: new Date() };
+  }
+};
+
+
 const aprobarSolicitud = async (req, res) => {
   let productorNuevo = null;
 
@@ -419,8 +434,12 @@ const aprobarSolicitud = async (req, res) => {
     solicitud.password = undefined; // ya está en la cuenta; no se guarda dos veces
     await solicitud.save();
 
+    // Aviso por correo (si falla, la cuenta ya quedó creada)
+    const avisoCorreo = await registrarAviso(solicitud);
+
     return res.status(200).json({
       mensaje: `Cuenta de ${solicitud.nombre} ${solicitud.apellido} creada correctamente`,
+      avisoCorreo,
       solicitud: { ...solicitud.toObject(), password: undefined }
     });
 
@@ -455,8 +474,12 @@ const rechazarSolicitud = async (req, res) => {
     solicitud.fechaRevision = new Date();
     await solicitud.save();
 
+    // Aviso por correo con el motivo
+    const avisoCorreo = await registrarAviso(solicitud);
+
     return res.status(200).json({
       mensaje: "Solicitud rechazada",
+      avisoCorreo,
       solicitud: { ...solicitud.toObject(), password: undefined }
     });
 
@@ -509,7 +532,69 @@ const estadoSolicitudParaLogin = async (email, password) => {
 };
 
 
+// ==========================================
+// CONSULTAR EL ESTADO DE MI SOLICITUD (público)
+// POST /api/public/solicitudes/estado
+// Body: { email, password }
+// Pide el correo y la contraseña que la persona eligió al
+// solicitar la cuenta, para no revelar datos ajenos.
+// ==========================================
+
+const consultarEstadoSolicitud = async (req, res) => {
+  try {
+    const email = texto(req.body?.email).toLowerCase();
+    const password = String(req.body?.password ?? "");
+
+    if (!email || !password) {
+      throw new ErrorSolicitud("Escribe el correo y la contraseña que usaste al solicitar tu cuenta");
+    }
+
+    const noEncontrada = () => res.status(404).json({
+      mensaje: "No encontramos una solicitud con ese correo y contraseña. Revisa los datos."
+    });
+
+    // ¿Ya fue aprobada? Entonces la contraseña está en la cuenta
+    const usuario = await Usuario.findOne({ email }).select("password");
+    if (usuario) {
+      if (!(await bcrypt.compare(password, usuario.password))) return noEncontrada();
+      const aprobada = await SolicitudCuenta.findOne({ email, estado: "aprobada" })
+        .sort({ createdAt: -1 })
+        .select("createdAt fechaRevision");
+      return res.json({
+        estado: "aprobada",
+        fechaSolicitud: aprobada?.createdAt || null,
+        fechaRevision: aprobada?.fechaRevision || null,
+        mensaje: "Tu cuenta ya fue aprobada. Ya puedes iniciar sesión."
+      });
+    }
+
+    const solicitud = await SolicitudCuenta.findOne({
+      email,
+      estado: { $in: ["pendiente", "rechazada"] }
+    }).sort({ createdAt: -1 });
+
+    if (!solicitud?.password || !(await bcrypt.compare(password, solicitud.password))) {
+      return noEncontrada();
+    }
+
+    return res.json({
+      estado: solicitud.estado,
+      fechaSolicitud: solicitud.createdAt,
+      fechaRevision: solicitud.fechaRevision || null,
+      motivoRechazo: solicitud.estado === "rechazada" ? solicitud.motivoRechazo : undefined,
+      mensaje: solicitud.estado === "pendiente"
+        ? "Tu solicitud está pendiente: la empresa aún no la revisa."
+        : "Tu solicitud fue rechazada. Puedes corregir los datos y enviar una nueva."
+    });
+
+  } catch (error) {
+    return responderError(res, error, "Error al consultar la solicitud");
+  }
+};
+
+
 module.exports = {
+  consultarEstadoSolicitud,
   validarDatosSolicitud,
   direccionCompleta,
   ubicacionFinca,

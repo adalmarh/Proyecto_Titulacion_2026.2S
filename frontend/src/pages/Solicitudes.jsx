@@ -117,10 +117,18 @@ const Solicitudes = () => {
         ? await api.patch(`/solicitudes/${revisando._id}/aprobar`, {})
         : await api.patch(`/solicitudes/${revisando._id}/rechazar`, { motivo: motivo.trim() });
 
+      // Resultado del aviso por correo al solicitante
+      const aviso = r.data?.avisoCorreo?.estado;
+      const textoAviso = aviso === "enviado"
+        ? ` Se le envió un correo a ${revisando.email}.`
+        : aviso === "fallido"
+          ? " No se pudo enviar el correo de aviso; la persona puede consultar su estado en «Consultar mi solicitud»."
+          : "";
+
       setMensaje(
-        aprobar
+        (aprobar
           ? `${r.data.mensaje}. Ya puede iniciar sesión con ${revisando.email}.`
-          : `Solicitud de ${revisando.nombre} ${revisando.apellido} rechazada`
+          : `Solicitud de ${revisando.nombre} ${revisando.apellido} rechazada.`) + textoAviso
       );
       setRevisando(null);
       avisarCambio();
